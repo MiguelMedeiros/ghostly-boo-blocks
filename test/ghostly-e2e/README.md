@@ -12,7 +12,7 @@ BLOCKS_DIST=~/code/ghostly-blocks/dist/index.html \
 BLOCKS_MANIFEST=~/code/ghostly-blocks/ghostly-app.json \
 BLOCKS_SHOTS=/tmp/blocks-shots \
 E2E_WEB_PORT=4391 \
-npx playwright test -c e2e/playwright.config.ts --project web e2e/web/apps-blocks.spec.ts
+npx playwright test -c e2e/playwright.config.ts --project=web apps-blocks
 ```
 
 The spec signs a bundle of the build with a throwaway key made from a fixed label (as Ghostly's own app specs do)
