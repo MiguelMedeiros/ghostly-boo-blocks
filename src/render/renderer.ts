@@ -9,7 +9,7 @@ import { TILE } from "../blocks.ts";
 import { SIZE_X, SIZE_Y, SIZE_Z } from "../terrain.ts";
 import { SECTION, SECTION_COUNT, SECTIONS_X, SECTIONS_Z } from "../world.ts";
 import { ATLAS_PX, drawAtlas } from "./atlas.ts";
-import { boxMesh, FLOATS_PER_VERTEX, meshSection, type BlockSource } from "./mesher.ts";
+import { FLOATS_PER_VERTEX, ghostMesh, meshSection, type BlockSource } from "./mesher.ts";
 import { multiply, perspective, placeAt, view, type Mat4, type Vec3 } from "./math.ts";
 
 export const FOV = (70 * Math.PI) / 180;
@@ -123,7 +123,7 @@ export class Renderer {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-    this.ghost = this.upload(boxMesh(0.8, 1.5, 0.8, TILE.ghostFace, TILE.ghostBody))!;
+    this.ghost = this.upload(ghostMesh(TILE.ghostFace, TILE.ghostBody))!;
     this.outline = this.makeOutline();
   }
 

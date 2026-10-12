@@ -114,16 +114,24 @@ export function meshSection(world: BlockSource, section: number): SectionMesh {
   return { solid: solid.done(), water: water.done() };
 }
 
-/** A box's faces as quads (for the contact's ghost): tiles for the front and the rest, centred on x and z. */
-export function boxMesh(w: number, h: number, d: number, front: number, rest: number): { vertices: Float32Array; indices: Uint32Array } {
-  const b = new Builder();
+/** A box's faces as quads: `w` x `h` x `d`, centred on x and z, its bottom at `y`; the front (-z) face shows `front`. */
+function box(b: Builder, w: number, h: number, d: number, y: number, front: number, rest: number, x = 0): void {
   for (const face of FACES) {
     const tile = face.n[2] === -1 ? front : rest;
     const corners = face.c.map(([cx, cy, cz, u, v]) => {
       const [tu, tv] = tileUv(tile, u, v);
-      return [(cx - 0.5) * w, cy * h, (cz - 0.5) * d, tu, tv, face.shade * 0.25 + 0.75];
+      return [x + (cx - 0.5) * w, y + cy * h, (cz - 0.5) * d, tu, tv, face.shade * 0.25 + 0.75];
     });
     b.quad(corners, [1, 1, 1, 1]);
   }
+}
+
+/** The contact's ghost: a body with its face to -z, a rounded head, and a wavy hem; 1.55 tall, its bottom at 0. */
+export function ghostMesh(face: number, body: number): { vertices: Float32Array; indices: Uint32Array } {
+  const b = new Builder();
+  box(b, 0.8, 1.0, 0.8, 0.35, face, body);
+  box(b, 0.6, 0.2, 0.6, 1.35, body, body);
+  // The hem: four strips across the bottom, long and short in turn.
+  for (const [i, long] of [[0, true], [1, false], [2, true], [3, false]] as const) box(b, 0.2, long ? 0.35 : 0.2, 0.8, long ? 0 : 0.15, body, body, -0.3 + i * 0.2);
   return b.done();
 }
