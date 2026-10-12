@@ -105,3 +105,26 @@ test("two people build in one world, see each other's name, and find it again af
   await anaAgain.close();
   await bob.close();
 });
+
+test("fits a phone: touch buttons, a hotbar that scrolls within the screen, tap to break and to place", async ({ browser, browserName }) => {
+  test.skip(browserName !== "chromium", "touch emulation: Chromium");
+  const chat = new Chat(browser);
+  const ana = await chat.open("ana", { inChat: false, viewport: { width: 375, height: 667 }, touch: true });
+  test.skip(!(await drawing(ana)), "no WebGL 2 in this browser here");
+  await dismissHelp(ana);
+  await expect(ana.frame.locator(".touch .pad")).toBeVisible();
+  await expect(ana.frame.locator(".touch .mode")).toBeVisible();
+  const bar = (await ana.frame.locator(".hotbar").boundingBox())!;
+  expect(bar.x).toBeGreaterThanOrEqual(0);
+  expect(bar.x + bar.width).toBeLessThanOrEqual(375);
+  const status = (await ana.frame.locator(".status").boundingBox())!;
+  expect(status.x + status.width).toBeLessThanOrEqual(375);
+  const view = ana.frame.locator("canvas.view");
+  await view.tap({ position: { x: 190, y: 420 } });
+  await expect.poll(() => edits(ana)).toBe(1);
+  await ana.frame.locator(".touch .mode").tap();
+  await view.tap({ position: { x: 250, y: 380 } });
+  await expect.poll(() => edits(ana)).toBe(2);
+  await ana.page.screenshot({ path: test.info().outputPath("phone.png") });
+  await ana.close();
+});

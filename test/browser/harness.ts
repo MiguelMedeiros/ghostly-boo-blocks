@@ -93,9 +93,9 @@ export class Chat {
     return [...this.sides.values()].find((s) => s.name !== name);
   }
 
-  async open(name: string, options: { inChat?: boolean; displayName?: string; locale?: string; viewport?: { width: number; height: number }; storage?: Map<string, string> } = {}): Promise<Side> {
+  async open(name: string, options: { inChat?: boolean; displayName?: string; locale?: string; viewport?: { width: number; height: number }; storage?: Map<string, string>; touch?: boolean } = {}): Promise<Side> {
     const inChat = options.inChat ?? true;
-    const context = await this.browser.newContext({ viewport: options.viewport ?? { width: 900, height: 600 } });
+    const context = await this.browser.newContext({ viewport: options.viewport ?? { width: 900, height: 600 }, ...(options.touch ? { hasTouch: true, isMobile: true } : {}) });
     const page = await context.newPage();
     const html = framedHost(builtPage());
     await page.route(`${ORIGIN}/**`, (route) => route.fulfill({ contentType: "text/html", body: html }));
