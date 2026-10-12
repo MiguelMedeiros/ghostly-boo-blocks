@@ -171,10 +171,11 @@ export class Session {
       return;
     }
     this.counts.received++;
-    if (this.state !== "here") {
-      // A frame can come before the peer event that says the contact opened: the frame says it.
+    if (this.state !== "here" && frame.t === "hello") {
+      // A hello can come before the peer event that says the contact opened: the hello says it. Other frames late
+      // from a contact who left change the world (merging is safe) but not who is here.
       this.state = "here";
-      this.contact ??= { version: frame.t === "hello" ? frame.version : "" };
+      this.contact ??= { version: frame.version };
       this.events.onPeer(this.state, this.contact);
     }
     if (frame.t === "hello") return this.hello(frame);
@@ -183,7 +184,7 @@ export class Session {
       for (const [local, stamp] of frame.edits) this.remote(cellOfLocal(frame.section, local), stamp);
     } else {
       for (const [cell, stamp] of frame.edits) this.remote(cell, stamp);
-      if (frame.pose && this.contact) {
+      if (frame.pose && this.contact && this.state === "here") {
         this.contact.pose = frame.pose;
         this.contact.poseAt = this.now();
         this.events.onPose(this.contact);

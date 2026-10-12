@@ -2,7 +2,7 @@
  * Blocks without its picture: the world, its storage and the session with the contact, wired together. The page
  * (src/main.ts) draws it and feeds it the person's edits; the tests drive two of these over mock brokers.
  */
-import type { MiniAppApi } from "./vendor/miniApp.ts";
+import type { MiniAppApi, MiniAppContext } from "./vendor/miniApp.ts";
 import { Limiter, realClock, type Clock } from "./limiter.ts";
 import { cleanName } from "./protocol.ts";
 import { WorldStore } from "./store.ts";
@@ -61,9 +61,9 @@ export class Core {
     }, options.clock ? () => options.clock!.now() : undefined);
   }
 
-  /** Reads the world and starts talking to the contact. */
-  async open(): Promise<void> {
-    const context = await this.limiter.run(() => this.api.context());
+  /** Reads the world and starts talking to the contact. `context` when the page already asked for it. */
+  async open(known?: MiniAppContext): Promise<void> {
+    const context = known ?? (await this.limiter.run(() => this.api.context()));
     this.inChat = context.inChat;
     this.name = cleanName(context.name);
     const loaded = await this.store.load();

@@ -1,6 +1,8 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { AIR, BEDROCK, BLOCKS, WATER } from "../src/blocks.ts";
+import { fnv, World } from "../src/world.ts";
+import { GROUND_HEX } from "./ground.ts";
 import { CELLS, DEFAULT_SEED, SEA_LEVEL, SIZE_X, SIZE_Y, SIZE_Z, cellIndex, generate, hash3, heightAt, spawnPoint } from "../src/terrain.ts";
 
 describe("terrain", () => {
@@ -10,6 +12,9 @@ describe("terrain", () => {
     // Pinned: if this changes, the generator changed, and GENERATOR must be raised with the old one kept.
     expect(createHash("sha256").update(cells).digest("base64url")).toMatchInlineSnapshot(`"WYCNp-p4FNqEJj8KQXow9vOH3YdHLUxtAX5w86s2-Ko"`);
     expect(generate(DEFAULT_SEED)).toEqual(cells);
+    // The page shows this as data-ground; test/browser checks Chromium and WebKit make the same.
+    expect(new World().groundHash).toBe(fnv(cells));
+    expect(fnv(cells).toString(16)).toBe(GROUND_HEX);
   });
 
   it("hashes integers with integer math only", () => {

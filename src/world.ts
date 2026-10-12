@@ -88,15 +88,20 @@ export class World {
   /** Called with each cell whose stamp changed, to store it. */
   onEdit: (cell: number) => void = () => {};
 
+  /** FNV-1a of the ground before any edit: the same on every engine, which the browser tests check. */
+  groundHash: number;
+
   constructor(id: WorldId = DEFAULT_WORLD) {
     this.id = id;
     this.cells = generate(id.seed);
+    this.groundHash = fnv(this.cells);
   }
 
   /** Starts over as another world: its ground, no edits. */
   reset(id: WorldId): void {
     this.id = id;
     this.cells = generate(id.seed);
+    this.groundHash = fnv(this.cells);
     this.edits.clear();
     for (const set of this.sectionCells) set.clear();
     this.hashes.fill(0);
@@ -172,4 +177,11 @@ export class World {
   get full(): boolean {
     return this.edits.size >= MAX_EDITS;
   }
+}
+
+/** FNV-1a, 32 bits, of bytes. */
+export function fnv(bytes: Uint8Array): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < bytes.length; i++) h = Math.imul(h ^ bytes[i], 0x01000193);
+  return h >>> 0;
 }
