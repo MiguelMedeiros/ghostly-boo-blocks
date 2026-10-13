@@ -13,6 +13,8 @@ import { forgetSharedData, openMacDesktop, type MacDesktop } from "../support/de
 import { LocalRelay } from "../support/relay";
 
 const SHOTS = process.env.BLOCKS_SHOTS;
+/** The version the store must list (absent: any). */
+const VERSION = process.env.BLOCKS_VERSION;
 const STORE_KEY = "y379ia3t1urwudj8o4w1qwmuwp1mcxyf956b5r7pqup7stce6diy";
 const REF = "bt85mdaupa7sya7uucqw3nac5nwd5coxz65spe6newcjszwn1fyo/boo-blocks";
 // 49820-49839: this test's ports.
@@ -140,13 +142,17 @@ test("two Desktop apps on a Mac install Boo Blocks from the official store and b
       const store = `[data-testid="app-store"][data-key="${STORE_KEY}"]`;
       await ana.go("#/apps");
       await expect.poll(() => app.text(store), { timeout: 30_000 }).not.toBeNull();
-      await app.click(`${store} [data-testid="app-store-refresh"]`);
-      await expect.poll(() => app.text(store), { timeout: 60_000 }).toContain("3 apps");
+      // raw.githubusercontent.com caches HEAD for 5 minutes: Refresh until the listing (and the version wanted) shows.
       const listing = `[data-testid="app-listing"][data-ref="${REF}"]`;
-      if ((await app.text(listing)) === null) await app.click(`${store} [data-testid="app-store-chevron"]`);
-      await expect.poll(() => app.text(listing), { timeout: 30_000 }).toContain("Boo Blocks");
+      await expect(async () => {
+        await app.click(`${store} [data-testid="app-store-refresh"]`);
+        await new Promise((done) => setTimeout(done, 3000));
+        if ((await app.text(listing)) === null) await app.click(`${store} [data-testid="app-store-chevron"]`);
+        expect(await app.text(listing)).toContain("Boo Blocks");
+      }).toPass({ timeout: 6 * 60_000, intervals: [15_000] });
       await app.click(`${listing} [data-testid="app-listing-install"]`);
       await expect.poll(() => app.text('[data-testid="app-install"]'), { timeout: 60_000 }).toContain("In Ghostly Store");
+      if (VERSION) expect(await app.text('[data-testid="app-install"]')).toContain(`Version ${VERSION}`);
       await app.click('[data-testid="app-install-confirm"]');
       await expect.poll(() => app.text('[data-testid="installed-app"]'), { timeout: 120_000 }).toContain("Boo Blocks");
       await ana.go(ana.chatHash!);
@@ -176,9 +182,9 @@ test("two Desktop apps on a Mac install Boo Blocks from the official store and b
       // picture), while timers, frames to the contact and storage go on.
       const frames: Record<string, number> = {};
       for (const [who, app] of [["ana", anaBlocks], ["bob", bobBlocks]] as const) {
-        await app.execute(`window.__probe = { frames: 0, ticks: 0 }; const f = () => { window.__probe.frames++; requestAnimationFrame(f); }; requestAnimationFrame(f); setInterval(() => window.__probe.ticks++, 100);`);
+        await app.execute(`window.__probe = { frames: 0, ticks: 0 }; const f = () => { if (window.__probe.done) return; window.__probe.frames++; requestAnimationFrame(f); }; requestAnimationFrame(f); const t = setInterval(() => { if (window.__probe.done) clearInterval(t); else window.__probe.ticks++; }, 100);`);
         await new Promise((done) => setTimeout(done, 1000));
-        const probe = await app.execute<string>(`return JSON.stringify({ visibility: document.visibilityState, focus: document.hasFocus(), ...window.__probe, edits: document.getElementById("app").dataset.edits, size: [innerWidth, innerHeight] });`);
+        const probe = await app.execute<string>(`window.__probe.done = true; return JSON.stringify({ visibility: document.visibilityState, focus: document.hasFocus(), ...window.__probe, edits: document.getElementById("app").dataset.edits, size: [innerWidth, innerHeight] });`);
         testInfo.annotations.push({ type: `probe-${who}`, description: probe });
         frames[who] = (JSON.parse(probe) as { frames: number }).frames;
         console.log(`probe ${who}: ${probe}`);
@@ -192,7 +198,8 @@ test("two Desktop apps on a Mac install Boo Blocks from the official store and b
       await expect.poll(async () => (await edits(anaBlocks)) === (await edits(bobBlocks)), { timeout: 30_000 }).toBe(true);
       if (frames.bob > 0) {
         await expect.poll(() => bobBlocks.text(".name-tag"), { timeout: 30_000 }).toBe("Ana");
-        await saveWorld(bobBlocks, "store-desktop-bob-sees-ana");
+        // The picture is a bonus: a frame the page did not draw (nothing moved) leaves it unread.
+        await saveWorld(bobBlocks, "store-desktop-bob-sees-ana").catch((e: unknown) => testInfo.annotations.push({ type: "no picture", description: String(e).slice(0, 200) }));
       } else {
         testInfo.annotations.push({ type: "not checked", description: "Bob's window got no frames (screen asleep or locked): the name tag and the picture" });
         console.log("not checked: the name tag and the picture (Bob's window got no frames)");

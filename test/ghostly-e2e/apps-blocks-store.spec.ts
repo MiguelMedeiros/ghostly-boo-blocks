@@ -13,6 +13,8 @@ import { composerRow } from "../support/composer";
 const STORE_KEY = "y379ia3t1urwudj8o4w1qwmuwp1mcxyf956b5r7pqup7stce6diy";
 const REF = "bt85mdaupa7sya7uucqw3nac5nwd5coxz65spe6newcjszwn1fyo/boo-blocks";
 const SHOTS = process.env.BLOCKS_SHOTS;
+/** The version the store must list (absent: any). */
+const VERSION = process.env.BLOCKS_VERSION;
 
 const miniApp = (page: Page) => page.getByTestId("mini-app");
 const blocks = (page: Page): FrameLocator => miniApp(page).frameLocator("iframe");
@@ -80,18 +82,20 @@ test("installs Boo Blocks from the official store and two people build in it", {
   const store = ana.page.getByTestId("app-store").and(ana.page.locator(`[data-key="${STORE_KEY}"]`));
   await expect(store).toBeVisible();
   // raw.githubusercontent.com caches HEAD for 5 minutes: right after a listing is merged, Refresh until it shows.
+  const listing = ana.page.locator(`[data-testid="app-listing"][data-ref="${REF}"]`);
   await expect(async () => {
     await store.getByTestId("app-store-refresh").click();
-    await expect(store).toContainText("3 apps", { timeout: 10_000 });
-  }).toPass({ timeout: 6 * 60_000, intervals: [20_000] });
-  const listing = ana.page.locator(`[data-testid="app-listing"][data-ref="${REF}"]`);
-  if (!(await listing.isVisible())) await store.getByTestId("app-store-chevron").click();
+    await ana.page.waitForTimeout(3000);
+    if (!(await listing.isVisible())) await store.getByTestId("app-store-chevron").click();
+    await expect(listing).toBeVisible({ timeout: 5000 });
+  }).toPass({ timeout: 6 * 60_000, intervals: [15_000] });
   await expect(listing).toBeVisible({ timeout: 60_000 });
   await expect(listing).toContainText("Boo Blocks");
   await listing.getByTestId("app-listing-install").click();
   const install = ana.page.getByTestId("app-install");
   await expect(install).toContainText("Boo Blocks", { timeout: 60_000 });
   await expect(install.getByTestId("app-permission-name")).toBeVisible();
+  if (VERSION) await expect(install).toContainText(`Version ${VERSION}`);
   await ana.page.waitForTimeout(600);
   await shot(ana, "store-01-install");
   await install.getByTestId("app-install-confirm").click();
