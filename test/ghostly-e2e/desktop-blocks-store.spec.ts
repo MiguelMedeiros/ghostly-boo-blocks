@@ -171,12 +171,16 @@ test("two Desktop apps on a Mac install Boo Blocks from the official store and b
 
     await test.step("they build, and Bob sees Ana's ghost with her name", async () => {
       for (const app of [anaBlocks, bobBlocks]) await app.execute(`document.querySelector('[role="dialog"] button')?.click();`);
-      // How each window runs: visible or not, and its animation frames and timer ticks in a second.
+      // How each window runs: visible or not, and its animation frames and timer ticks in a second. With the Mac's
+      // screen asleep or locked, both are hidden and get no frames at all: nothing is drawn then (no name tag, no
+      // picture), while timers, frames to the contact and storage go on.
+      const frames: Record<string, number> = {};
       for (const [who, app] of [["ana", anaBlocks], ["bob", bobBlocks]] as const) {
         await app.execute(`window.__probe = { frames: 0, ticks: 0 }; const f = () => { window.__probe.frames++; requestAnimationFrame(f); }; requestAnimationFrame(f); setInterval(() => window.__probe.ticks++, 100);`);
         await new Promise((done) => setTimeout(done, 1000));
         const probe = await app.execute<string>(`return JSON.stringify({ visibility: document.visibilityState, focus: document.hasFocus(), ...window.__probe, edits: document.getElementById("app").dataset.edits, size: [innerWidth, innerHeight] });`);
         testInfo.annotations.push({ type: `probe-${who}`, description: probe });
+        frames[who] = (JSON.parse(probe) as { frames: number }).frames;
         console.log(`probe ${who}: ${probe}`);
       }
       await build(anaBlocks, 0, bobBlocks);
@@ -185,8 +189,14 @@ test("two Desktop apps on a Mac install Boo Blocks from the official store and b
       await anaBlocks.execute(`window.dispatchEvent(new KeyboardEvent("keydown", { code: "Space", bubbles: true }));`);
       await hold(anaBlocks, "KeyW", 2000);
       await anaBlocks.execute(`window.dispatchEvent(new KeyboardEvent("keyup", { code: "Space", bubbles: true }));`);
-      await expect.poll(() => bobBlocks.text(".name-tag"), { timeout: 30_000 }).toBe("Ana");
-      await saveWorld(bobBlocks, "store-desktop-bob-sees-ana");
+      await expect.poll(async () => (await edits(anaBlocks)) === (await edits(bobBlocks)), { timeout: 30_000 }).toBe(true);
+      if (frames.bob > 0) {
+        await expect.poll(() => bobBlocks.text(".name-tag"), { timeout: 30_000 }).toBe("Ana");
+        await saveWorld(bobBlocks, "store-desktop-bob-sees-ana");
+      } else {
+        testInfo.annotations.push({ type: "not checked", description: "Bob's window got no frames (screen asleep or locked): the name tag and the picture" });
+        console.log("not checked: the name tag and the picture (Bob's window got no frames)");
+      }
     });
     testInfo.annotations.push({ type: "transport", description: await ana.connection() });
   } finally {
