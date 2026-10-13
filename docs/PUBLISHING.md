@@ -19,7 +19,7 @@ and is checked by CI; "Sign" and the store's index are the owner's steps.
 | Boo Blocks's reference | `bt85mdaupa7sya7uucqw3nac5nwd5coxz65spe6newcjszwn1fyo/boo-blocks` |
 | Publisher key file (owner's machine only) | `~/ghostly-keys/boo-blocks-publisher.key` (fingerprint `bt85 mdau pa7s ya7u`) |
 | Store folder | `apps/boo-blocks.bt85mdaupa7sya7u/` |
-| Published so far | 1.0.0 (sequence 1). See [CHANGES.md](../CHANGES.md) |
+| Published so far | 1.0.0 (sequence 1), 1.0.1 (2). See [CHANGES.md](../CHANGES.md) |
 
 ## 1. Prepare the version (a pull request)
 
