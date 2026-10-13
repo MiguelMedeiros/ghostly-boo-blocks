@@ -1,16 +1,14 @@
-# Blocks
+# Boo Blocks
 
-Build a block world together, live in a [Ghostly](https://github.com/MiguelMedeiros/ghostly) chat. Open Blocks in a
+Build a block world together, live in a [Ghostly](https://github.com/MiguelMedeiros/ghostly) chat. Open Boo Blocks in a
 1:1 chat and your contact gets a card to join: you walk, fly, break and place blocks in one world, see each other as
 little ghosts with your names, and the world is kept for that chat on both sides. What one of you builds while the
 other is away reaches them the next time you are both in.
 
-Blocks is a Ghostly mini-app ([WISP 1200](https://github.com/MiguelMedeiros/ghostly/blob/dev/docs/wisps/1200-marketplace.md)):
+Boo Blocks is a Ghostly mini-app ([WISP 1200](https://github.com/MiguelMedeiros/ghostly/blob/dev/docs/wisps/1200-marketplace.md)):
 one self-contained HTML file (about 60 KiB) that runs in the client's sandbox. It has no network and talks to Ghostly
 only through `window.ghostly`, the broker: `apps/1` frames of at most 32 KiB to the same app on the contact's side,
 and storage per app and per chat. Its permissions are `chat` and `name`; its `view` is `full`.
-
-"Blocks" is a working title (see the name proposals in the tracking issue).
 
 ## How it works
 
@@ -47,7 +45,7 @@ blocks that are still there after a reload, and two sides build at once, see eac
 again after reloading and after one leaves while the other builds. Chromium draws with SwiftShader, so it needs no
 GPU; a WebKit without WebGL 2 (some Linux machines) skips the specs that draw.
 
-[test/ghostly-e2e/](test/ghostly-e2e/) runs the built Blocks inside a real Ghostly web client, two peers in one
+[test/ghostly-e2e/](test/ghostly-e2e/) runs the built Boo Blocks inside a real Ghostly web client, two peers in one
 chat, on Ghostly's own e2e harness.
 
 `npm run digest` prints the built file's SHA-256 in the form a signed bundle lists it. The build is reproducible;
@@ -57,7 +55,7 @@ the bundler is pinned (`overrides` in `package.json`).
 
 Before a release, check these and tick them, with the client versions, in the release's pull request or issue:
 
-- **Desktop (macOS, WKWebView):** Blocks opens in its window, draws, drag looks, keys move, both mouse buttons build,
+- **Desktop (macOS, WKWebView):** Boo Blocks opens in its window, draws, drag looks, keys move, both mouse buttons build,
   and a contact on the web sees the edits and the ghost.
 - **Sounds:** after a click inside the frame, breaking, placing and footsteps are heard on web and Desktop.
 - **Touch (iOS Safari, Android Chrome):** drag looks without scrolling the page, arrows walk, tap breaks or places as
@@ -82,14 +80,14 @@ Before a release, check these and tick them, with the client versions, in the re
 | `src/vendor/miniApp.ts` | The broker's types and limits, copied from Ghostly (see its header) |
 | `test/mockBroker.ts` | A broker with the WISP's rules, rate limit included, for two sides of one chat |
 | `test/browser/` | Playwright specs and their two-page harness with a test broker |
-| `test/ghostly-e2e/` | The spec that runs Blocks in Ghostly's own e2e suite |
+| `test/ghostly-e2e/` | The spec that runs Boo Blocks in Ghostly's own e2e suite |
 | `ghostly-app.json` | The manifest, without `publisher`, `sequence` and `files` (the CLI writes those) |
 | `scripts/stage.mjs`, `scripts/bundle.mjs` | `npm run stage`: the folder `ghostly app publish` signs. `npm run check:bundle`: whether a signed bundle is this build, and the store's listing for it |
 | `CHANGES.md`, `docs/PUBLISHING.md`, `docs/protocol.md` | What each version changed, how a version is published, the protocol |
 
 ## Publish a new version
 
-Only the holder of the Blocks publisher key can sign a version. [docs/PUBLISHING.md](docs/PUBLISHING.md) has every
+Only the holder of the Boo Blocks publisher key can sign a version. [docs/PUBLISHING.md](docs/PUBLISHING.md) has every
 step: prepare the version, build and stage, sign with `ghostly app publish`, commit `app.ghostlyapp` here, list it in
 the store and sign the store's index.
 

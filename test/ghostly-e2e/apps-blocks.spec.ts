@@ -1,12 +1,12 @@
 /*
- * Blocks in Ghostly, end to end, on Ghostly's own e2e suite (copy this file to a Ghostly checkout's e2e/web/ and run
- * it there; see test/ghostly-e2e/README.md). The built Blocks (BLOCKS_DIST, its ghostly-app.json beside it as
+ * Boo Blocks in Ghostly, end to end, on Ghostly's own e2e suite (copy this file to a Ghostly checkout's e2e/web/ and run
+ * it there; see test/ghostly-e2e/README.md). The built Boo Blocks (BLOCKS_DIST, its ghostly-app.json beside it as
  * BLOCKS_MANIFEST) is bundled and signed in the test with a throwaway key (the SHA-256 of a fixed label, as Ghostly's
  * own app specs do), listed in a store the test signs, and served at raw.githubusercontent.com URLs by context.route:
  * nothing leaves the machine and no real key is used.
  *
- * Ana installs Blocks from the store and opens it in her chat with Bob; Bob installs it from her card. They build at
- * once, see each other's name, close and reopen Blocks, and Bob reloads Ghostly: the world is the same each time.
+ * Ana installs Boo Blocks from the store and opens it in her chat with Bob; Bob installs it from her card. They build at
+ * once, see each other's name, close and reopen Boo Blocks, and Bob reloads Ghostly: the world is the same each time.
  */
 import { readFileSync } from "node:fs";
 import { sha256 } from "@noble/hashes/sha2.js";
@@ -91,7 +91,7 @@ async function dismissHelp(page: Page): Promise<void> {
   if (await close.isVisible().catch(() => false)) await close.click();
 }
 
-/** Closes Blocks from its header and opens it again from the chat's app card. */
+/** Closes Boo Blocks from its header and opens it again from the chat's app card. */
 async function closeAndReopen(peer: Peer): Promise<void> {
   await miniApp(peer.page).getByTestId("mini-app-close").click();
   await expect(miniApp(peer.page)).toBeHidden();
@@ -100,8 +100,8 @@ async function closeAndReopen(peer: Peer): Promise<void> {
   await expect(blocks(peer.page).locator("#app")).toHaveAttribute("data-state", "ready", { timeout: 30_000 });
 }
 
-test("two people build in one Blocks world in their chat, and find it again after closing it and reloading", async ({ peer }) => {
-  test.skip(!DIST || !MANIFEST, "BLOCKS_DIST and BLOCKS_MANIFEST name the built Blocks");
+test("two people build in one Boo Blocks world in their chat, and find it again after closing it and reloading", async ({ peer }) => {
+  test.skip(!DIST || !MANIFEST, "BLOCKS_DIST and BLOCKS_MANIFEST name the built Boo Blocks");
   test.setTimeout(8 * 60_000);
   const store = await blocksStore();
   const [ana, bob] = await Promise.all([peer("ana"), peer("bob")]);
@@ -112,7 +112,7 @@ test("two people build in one Blocks world in their chat, and find it again afte
   await setNickname(ana, "Ana");
   await setNickname(bob, "Bob");
 
-  // 1. Ana adds the store and installs Blocks: the install screen asks for her name in the chat.
+  // 1. Ana adds the store and installs Boo Blocks: the install screen asks for her name in the chat.
   await ana.page.getByTestId("account-apps").click();
   await ana.page.getByTestId("apps-add").click();
   await ana.page.getByTestId("apps-add-url").fill(STORE_URL);
@@ -127,13 +127,13 @@ test("two people build in one Blocks world in their chat, and find it again afte
   await expect(ana.page.getByTestId("installed-app")).toContainText(store.title);
   await ana.page.goto("/#/");
 
-  // 2. They pair; Ana opens Blocks in the chat and waits for Bob.
+  // 2. They pair; Ana opens Boo Blocks in the chat and waits for Bob.
   await pair(ana, bob);
   await (await composerRow(ana.page, "composer-apps")).click();
   await ana.page.getByTestId("chat-apps").getByTestId("chat-app-open").click();
   await expect(miniApp(ana.page)).toBeVisible();
   await expect(blocks(ana.page).locator("#app")).toHaveAttribute("data-state", "ready", { timeout: 30_000 });
-  await expect(status(ana.page)).toHaveText("Waiting for your contact to open Blocks");
+  await expect(status(ana.page)).toHaveText("Waiting for your contact to open Boo Blocks");
   await dismissHelp(ana.page);
 
   // 3. Bob installs it from Ana's card and opens it: each sees the other's name.
@@ -178,7 +178,7 @@ test("two people build in one Blocks world in their chat, and find it again afte
   await shot(bob, "02-bob-sees-ana");
   await shot(ana, "03-ana-building");
 
-  // 6. Each closes Blocks and opens it again from the card: the world is kept, and they catch up.
+  // 6. Each closes Boo Blocks and opens it again from the card: the world is kept, and they catch up.
   for (const p of [ana, bob]) {
     await closeAndReopen(p);
     expect(await edits(p.page)).toBe(together);
@@ -186,9 +186,9 @@ test("two people build in one Blocks world in their chat, and find it again afte
   await expect(status(ana.page)).toHaveText("Building with Bob", { timeout: 60_000 });
   await expect(status(bob.page)).toHaveText("Building with Ana", { timeout: 60_000 });
 
-  // 7. Ana closes Blocks; Bob builds alone; Ana opens it again and gets what he built.
+  // 7. Ana closes Boo Blocks; Bob builds alone; Ana opens it again and gets what he built.
   await miniApp(ana.page).getByTestId("mini-app-close").click();
-  await expect(status(bob.page)).toHaveText("Waiting for your contact to open Blocks", { timeout: 60_000 });
+  await expect(status(bob.page)).toHaveText("Waiting for your contact to open Boo Blocks", { timeout: 60_000 });
   await build(bob.page, "right");
   await build(bob.page, "right");
   await expect.poll(() => edits(bob.page)).toBeGreaterThan(together);
@@ -197,7 +197,7 @@ test("two people build in one Blocks world in their chat, and find it again afte
   await expect.poll(async () => (await edits(ana.page)) === (await edits(bob.page)), { timeout: 60_000 }).toBe(true);
   const after = await edits(bob.page);
 
-  // 8. Bob reloads Ghostly: Blocks is closed; opened from the card, his world is the same.
+  // 8. Bob reloads Ghostly: Boo Blocks is closed; opened from the card, his world is the same.
   await bob.page.waitForTimeout(1500);
   await bob.page.reload();
   await expect(miniApp(bob.page)).toBeHidden();

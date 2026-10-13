@@ -1,6 +1,6 @@
 /**
  * The kinds of block. A block id is one byte, kept in the world and sent to the contact: an id never changes meaning,
- * and a new kind gets a new id (an older Blocks shows an id it does not know as air and keeps it as it is).
+ * and a new kind gets a new id (an older Boo Blocks shows an id it does not know as air and keeps it as it is).
  */
 
 export const AIR = 0;

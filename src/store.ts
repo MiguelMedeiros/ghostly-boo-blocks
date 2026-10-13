@@ -45,7 +45,7 @@ export class WorldStore {
     return this.limiter.run(make);
   }
 
-  /** Reads the world from storage into `world`. "newer" when a later Blocks made it (a generator this one lacks). */
+  /** Reads the world from storage into `world`. "newer" when a later Boo Blocks made it (a generator this one lacks). */
   async load(): Promise<Loaded> {
     const meta = await this.call(() => this.api.storage.get(META_KEY));
     const id = readMeta(meta);

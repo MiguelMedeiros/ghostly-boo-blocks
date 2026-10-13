@@ -1,5 +1,5 @@
 /**
- * Blocks without its picture: the world, its storage and the session with the contact, wired together. The page
+ * Boo Blocks without its picture: the world, its storage and the session with the contact, wired together. The page
  * (src/main.ts) draws it and feeds it the person's edits; the tests drive two of these over mock brokers.
  */
 import type { MiniAppApi, MiniAppContext } from "./vendor/miniApp.ts";
@@ -19,7 +19,7 @@ export interface CoreHooks {
   onWorld?(id: WorldId): void;
   onPeer?(state: PeerState, contact: Contact | null): void;
   onPose?(contact: Contact): void;
-  /** The contact runs a Blocks too new for this one. */
+  /** The contact runs a Boo Blocks too new for this one. */
   onIncompatible?(version: string): void;
 }
 
@@ -35,7 +35,7 @@ export class Core {
   readonly store: WorldStore;
   readonly session: Session;
   inChat = false;
-  /** The world in storage was made by a later Blocks, which this one cannot draw: the page says to update. */
+  /** The world in storage was made by a later Boo Blocks, which this one cannot draw: the page says to update. */
   newer = false;
   name?: string;
   private flushTimer: ReturnType<typeof setInterval> | null = null;

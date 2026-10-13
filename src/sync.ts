@@ -1,7 +1,7 @@
 /**
- * Building together: the frames of src/protocol.ts over the chat, while both sides have Blocks open.
+ * Building together: the frames of src/protocol.ts over the chat, while both sides have Boo Blocks open.
  *
- * - When the contact opens Blocks (or this side opens it while the contact has it open), both send `hello`: which
+ * - When the contact opens Boo Blocks (or this side opens it while the contact has it open), both send `hello`: which
  *   world each has and a hash per section. If the worlds differ, the older one is dropped for the newer
  *   (src/world.ts, `newerWorld`) and that side says hello again. Then each side sends every section whose hash
  *   differs from the contact's, and merges what it gets cell by cell. Both end with the union of both sides' edits.
@@ -42,7 +42,7 @@ export interface SessionEvents {
   onWorldReplaced(id: WorldId): Promise<void>;
   /** A cell's stamp changed by a contact's edit (to store it). */
   onRemoteEdit(cell: number): void;
-  /** The contact runs a Blocks that speaks a newer protocol than this one can. */
+  /** The contact runs a Boo Blocks that speaks a newer protocol than this one can. */
   onIncompatible(version: string): void;
 }
 
@@ -87,7 +87,7 @@ export class Session {
   }
 
   /**
-   * Starts: who this side is, whether the contact has Blocks open already (context().peer), and the ticks. What
+   * Starts: who this side is, whether the contact has Boo Blocks open already (context().peer), and the ticks. What
    * arrived before is handled now, in order.
    */
   start(me: { version: string; name?: string; inChat: boolean }, peerOpen: { version: string } | null, tickMs = TICK_MS): void {

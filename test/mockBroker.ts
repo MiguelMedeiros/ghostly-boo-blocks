@@ -1,9 +1,9 @@
 /**
- * A stand-in for the client's broker, with the WISP 1200 rules Blocks depends on: storage per app and per chat with
+ * A stand-in for the client's broker, with the WISP 1200 rules Boo Blocks depends on: storage per app and per chat with
  * its limits (a key, a value, 5 MiB counting 128 bytes a key), `chat.send` only while both sides have the app open,
  * delivered in order, asynchronously and as a copy, at most 32 KiB a frame, and **at most 50 requests a second for
  * all calls together**: one more and the call fails with `too-fast`, and `overLimit` counts it, so a test fails if
- * Blocks ever bursts. Refusals reject with an Error whose message is the WISP's code, as in the runner.
+ * Boo Blocks ever bursts. Refusals reject with an Error whose message is the WISP's code, as in the runner.
  */
 import { MINI_APP_LIMITS, type MiniAppApi, type MiniAppContext, type MiniAppJson, type MiniAppPeerEvent } from "../src/vendor/miniApp.ts";
 

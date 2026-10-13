@@ -1,5 +1,5 @@
 /**
- * The built Blocks (dist/index.html) in real browsers, for the Playwright specs.
+ * The built Boo Blocks (dist/index.html) in real browsers, for the Playwright specs.
  *
  * Each side is a page that holds the app in `<iframe sandbox="allow-scripts">` with a `<meta>` CSP like the web
  * runner's, so what the runner forbids fails here too (every violation is recorded in `window.__violations`). The
@@ -28,12 +28,12 @@ function framedHost(html: string): string {
   const inner = html.replace("<head>", `<head>\n    <meta http-equiv="Content-Security-Policy" content="${RUNNER_CSP}" />`);
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <style>html,body{margin:0;height:100%;background:#222}iframe{border:0;width:100%;height:100%;display:block}</style></head>
-<body><iframe sandbox="allow-scripts" title="Blocks"></iframe><script>
+<body><iframe sandbox="allow-scripts" title="Boo Blocks"></iframe><script>
 document.querySelector("iframe").srcdoc = ${JSON.stringify(inner).replace(/<\//g, "<\\/")};
 </script></body></html>`;
 }
 
-/** Runs in the frame before Blocks: the test broker. */
+/** Runs in the frame before Boo Blocks: the test broker. */
 function installBroker(options: { inChat: boolean; name?: string; locale: string }): void {
   const w = window as unknown as Record<string, unknown> & Window;
   w.__violations = [] as string[];
@@ -71,7 +71,7 @@ export interface Side {
   name: string;
   page: Page;
   context: BrowserContext;
-  /** The frame Blocks runs in. */
+  /** The frame Boo Blocks runs in. */
   frame: Frame;
   /** This side's storage, kept in Node across reloads. */
   storage: Map<string, string>;
@@ -79,7 +79,7 @@ export interface Side {
   rate: number[];
   overLimit: number;
   open: boolean;
-  /** Reloads the page: Blocks closes and opens again, with the same storage. */
+  /** Reloads the page: Boo Blocks closes and opens again, with the same storage. */
   reload(): Promise<void>;
   close(): Promise<void>;
 }

@@ -1,9 +1,9 @@
 /**
- * Builds Blocks to one self-contained file, dist/index.html: the script and styles inline, nothing loaded by URL
+ * Builds Boo Blocks to one self-contained file, dist/index.html: the script and styles inline, nothing loaded by URL
  * (the runner's sandbox allows no other way in). The script is classic, not a module, so it runs the same when the
  * runner writes the entry into its frame with document.write.
  *
- * Blocks carries no third-party code: its textures are drawn and its sounds synthesized by its own script. The build
+ * Boo Blocks carries no third-party code: its textures are drawn and its sounds synthesized by its own script. The build
  * fails if a module from node_modules ever reaches the page, so a dependency added later cannot ship without its
  * licence notice being thought about first (see ghostly-chess's vite.config.ts for how that is done).
  */
@@ -38,12 +38,12 @@ function singleFile(): Plugin {
         "  <head>",
         '    <meta charset="utf-8" />',
         '    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />',
-        "    <title>Blocks</title>",
+        "    <title>Boo Blocks</title>",
         `    <style>\n${css}</style>`,
         "  </head>",
         "  <body>",
         '    <div id="app"></div>',
-        `    <script>\n/*! Blocks, a Ghostly mini-app. MIT License, Copyright (c) 2026 Miguel Medeiros. */\n(() => {\n${code}\n})();\n</script>`,
+        `    <script>\n/*! Boo Blocks, a Ghostly mini-app. MIT License, Copyright (c) 2026 Miguel Medeiros. */\n(() => {\n${code}\n})();\n</script>`,
         "  </body>",
         "</html>",
         "",

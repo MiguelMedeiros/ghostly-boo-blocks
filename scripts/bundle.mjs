@@ -5,10 +5,10 @@
 //   npm run check:bundle -- --listing                     also prints the store's listing.json for it
 //   npm run check:bundle -- <file>                        another bundle
 //   npm run check:bundle -- --expect <sequence>           no bundle needed: the digest this build will have, signed
-//                                                         by the Blocks key under that sequence
+//                                                         by the Boo Blocks key under that sequence
 //
 // It reads the bundle's manifest (WISP 1200: "GHOSTLYAPP1", the manifest's length, the manifest) and checks that it
-// is Blocks under the Blocks publisher key, that it says what ghostly-app.json says, and that its one file is
+// is Boo Blocks under the Boo Blocks publisher key, that it says what ghostly-app.json says, and that its one file is
 // dist/index.html, byte for byte. It does NOT check the signature: `ghostly app verify` does that, and the store's
 // check does it again.
 import { execFileSync } from "node:child_process";
@@ -18,12 +18,12 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 /**
- * The Blocks publisher key (public, z-base32). Empty until the first version is signed: `ghostly app publish` makes
+ * The Boo Blocks publisher key (public, z-base32). Empty until the first version is signed: `ghostly app publish` makes
  * the key then, and the commit that adds app.ghostlyapp sets it here (docs/PUBLISHING.md, step 4). Until it is set,
  * `check:bundle` takes the key from the bundle and says so.
  */
 export const PUBLISHER = "";
-export const REPO = "MiguelMedeiros/ghostly-blocks";
+export const REPO = "MiguelMedeiros/ghostly-boo-blocks";
 export const BUNDLE = "app.ghostlyapp";
 /** Where clients read newer bundles: this repository's HEAD. The manifest's `sources` names it. */
 export const SOURCE = `https://raw.githubusercontent.com/${REPO}/HEAD/${BUNDLE}`;
@@ -57,7 +57,7 @@ export function expected(source, page, sequence, publisher = PUBLISHER) {
 /** What is wrong with a bundle's manifest, given ghostly-app.json and the built page. Empty when nothing is. */
 export function problems(manifest, source, page, publisher = PUBLISHER) {
   const found = [];
-  if (publisher && manifest.publisher !== publisher) found.push(`signed for another publisher key (${manifest.publisher}), not the Blocks key`);
+  if (publisher && manifest.publisher !== publisher) found.push(`signed for another publisher key (${manifest.publisher}), not the Boo Blocks key`);
   if (!Number.isSafeInteger(manifest.sequence) || manifest.sequence < 1) found.push(`sequence is ${JSON.stringify(manifest.sequence)}`);
   for (const key of new Set([...Object.keys(source), ...Object.keys(manifest)])) {
     if (WRITTEN.includes(key)) continue;
@@ -103,8 +103,8 @@ function main() {
   if (expect >= 0) {
     const sequence = Number(args[expect + 1]);
     if (!Number.isSafeInteger(sequence) || sequence < 1) fail("--expect takes the sequence the bundle will be signed under");
-    if (!PUBLISHER) fail("--expect needs the Blocks publisher key in scripts/bundle.mjs (PUBLISHER), set once the first version is signed");
-    console.log(`${source.title} ${source.version} of this build, signed by the Blocks key as sequence ${sequence}, has digest ${digestOf(expected(source, readFileSync(dist), sequence))}`);
+    if (!PUBLISHER) fail("--expect needs the Boo Blocks publisher key in scripts/bundle.mjs (PUBLISHER), set once the first version is signed");
+    console.log(`${source.title} ${source.version} of this build, signed by the Boo Blocks key as sequence ${sequence}, has digest ${digestOf(expected(source, readFileSync(dist), sequence))}`);
     return;
   }
   const file = resolve(args.find((a) => !a.startsWith("--")) ?? resolve(root, BUNDLE));
@@ -112,7 +112,7 @@ function main() {
   const { manifest, digest } = readManifest(readFileSync(file));
   const found = problems(manifest, source, readFileSync(dist));
   console.log(`${file}: ${manifest.name} ${manifest.version}, sequence ${manifest.sequence}, digest ${digest}`);
-  if (!PUBLISHER) console.log(`no Blocks key in scripts/bundle.mjs yet: this bundle is signed by ${manifest.publisher}. Set PUBLISHER to it in the commit that adds the bundle.`);
+  if (!PUBLISHER) console.log(`no Boo Blocks key in scripts/bundle.mjs yet: this bundle is signed by ${manifest.publisher}. Set PUBLISHER to it in the commit that adds the bundle.`);
   if (found.length) fail(found.map((p) => `problem: ${p}`).join("\n"));
   console.log("it is this checkout's build (the signature is for ghostly app verify to check)");
   if (!wantListing) return;

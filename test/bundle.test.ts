@@ -11,14 +11,14 @@ let out: string;
 let page: string;
 
 beforeAll(async () => {
-  out = mkdtempSync(join(tmpdir(), "ghostly-blocks-"));
+  out = mkdtempSync(join(tmpdir(), "ghostly-boo-blocks-"));
   await build({ configFile: join(root, "vite.config.ts"), logLevel: "silent", build: { outDir: out, emptyOutDir: true } });
   page = readFileSync(join(out, "index.html"), "utf8");
 }, 60_000);
 
 afterAll(() => rmSync(out, { recursive: true, force: true }));
 
-describe("the Blocks bundle", () => {
+describe("the Boo Blocks bundle", () => {
   it("is one HTML file with its script and styles inline", () => {
     expect(readdirSync(out)).toEqual(["index.html"]);
     expect(page).not.toMatch(/<script\b[^>]*\bsrc=/i);
@@ -45,7 +45,7 @@ describe("the Blocks bundle", () => {
   });
 
   it("builds to the same bytes twice", async () => {
-    const again = mkdtempSync(join(tmpdir(), "ghostly-blocks-"));
+    const again = mkdtempSync(join(tmpdir(), "ghostly-boo-blocks-"));
     await build({ configFile: join(root, "vite.config.ts"), logLevel: "silent", build: { outDir: again, emptyOutDir: true } });
     expect(readFileSync(join(again, "index.html"), "utf8")).toBe(page);
     rmSync(again, { recursive: true, force: true });

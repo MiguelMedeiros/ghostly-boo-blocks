@@ -7,7 +7,7 @@ import { digestOf, expected, listing, problems, readManifest, SOURCE, type Bundl
 
 const root = join(import.meta.dirname, "..");
 const source = JSON.parse(readFileSync(join(root, "ghostly-app.json"), "utf8")) as Record<string, unknown>;
-const page = new TextEncoder().encode("<!doctype html><title>Blocks</title>");
+const page = new TextEncoder().encode("<!doctype html><title>Boo Blocks</title>");
 const KEY = "odcgw6wjw8dynqop84r47jbjcdqossbgrfiejd367e14hgxmjcho";
 const sha256 = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("base64url");
 
@@ -40,7 +40,7 @@ describe("check:bundle", () => {
     const manifest = expected(source, page, 1, KEY);
     const out = listing(manifest, "d".repeat(43), "a".repeat(40));
     expect(out.ref).toBe(`${KEY}/${source.name}`);
-    expect(out.urls).toEqual([`https://cdn.jsdelivr.net/gh/MiguelMedeiros/ghostly-blocks@${"a".repeat(40)}/app.ghostlyapp`, SOURCE]);
+    expect(out.urls).toEqual([`https://cdn.jsdelivr.net/gh/MiguelMedeiros/ghostly-boo-blocks@${"a".repeat(40)}/app.ghostlyapp`, SOURCE]);
     expect(() => listing(manifest, "d", "HEAD")).toThrow(/not a full commit/);
   });
 });

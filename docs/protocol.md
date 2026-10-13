@@ -1,6 +1,6 @@
-# The Blocks protocol
+# The Boo Blocks protocol
 
-What two Blocks send each other over a Ghostly chat (`apps/1` data frames, WISP 1200), and what each keeps. For a
+What two Boo Blocks send each other over a Ghostly chat (`apps/1` data frames, WISP 1200), and what each keeps. For a
 bot, another client, or a later version that must stay compatible. The code is `src/protocol.ts` (frames and their
 checks), `src/sync.ts` (when each is sent), `src/world.ts` (the world and the merge) and `src/codec.ts` (records).
 
@@ -31,7 +31,7 @@ Every frame is a JSON object with `t`. Unknown keys are ignored. A frame that fa
 
 | `t` | Keys | When |
 |---|---|---|
-| `hello` | `p` protocol (1), `v` the app version, `n` the person's name (optional, at most 32 characters shown), `w` world id `[generator, seed, epoch]`, `h` the 256 section hashes, `a` 1 to ask for the contact's hello in answer (optional) | When the contact opens Blocks while this side has it open (the `chat.peer` event, or `context().peer` at start), again after taking a newer world, and with `a: 1` two seconds after a frame was refused as `offline` while the contact is still there |
+| `hello` | `p` protocol (1), `v` the app version, `n` the person's name (optional, at most 32 characters shown), `w` world id `[generator, seed, epoch]`, `h` the 256 section hashes, `a` 1 to ask for the contact's hello in answer (optional) | When the contact opens Boo Blocks while this side has it open (the `chat.peer` event, or `context().peer` at start), again after taking a newer world, and with `a: 1` two seconds after a frame was refused as `offline` while the contact is still there |
 | `sec` | `w`, `k` section (0 to 255), `e` records | For each section whose hash differs from the contact's hello, when this side has edits there: all of its edits, in frames of at most 3000 records |
 | `tick` | `w`, `p` pose `[x, y, z, yaw, pitch]` (optional), `e` records (optional) | Up to ten a second while both are in: the edits made since the last tick, and the pose when it moved (or once a second) |
 
@@ -48,13 +48,13 @@ A `sec` or `tick` whose `w` is not this side's world is ignored.
 2. If the worlds differ, both keep the **newer** one: the higher epoch, then the higher seed, then the higher
    generator. The side whose world lost drops its edits, takes the other's world, and says `hello` again (its hashes
    all 0 now). A generator a side does not know, or a protocol above its own, makes it say the contact needs a newer
-   Blocks, and it keeps its own world.
+   Boo Blocks, and it keeps its own world.
 3. With the same world, each side sends `sec` frames for every section where its hash differs from the contact's and
    it has edits, and merges what it gets. Both end with the union.
 
 Nothing is queued while the contact is away: a `tick` that does not go is lost, and the next hello finds what
 differs. The client answers `offline` also when the chat's channel has no room for a frame (a long catch-up on a slow
-link) while the contact is still there; Blocks then says hello again with `a: 1` two seconds later, and both sides
+link) while the contact is still there; Boo Blocks then says hello again with `a: 1` two seconds later, and both sides
 send what still differs. **New world** (the menu) is a new random seed with the epoch one higher, so it wins on both sides.
 
 ## Storage
@@ -72,6 +72,6 @@ this version knows is left alone, and the page asks to update.
 
 ## Rate
 
-The broker takes at most 50 requests a second from an app, storage and frames together. Blocks keeps under 40 with
+The broker takes at most 50 requests a second from an app, storage and frames together. Boo Blocks keeps under 40 with
 one limiter (`src/limiter.ts`) for every call, frames first: ten ticks a second, section frames at most twenty a
 second while catching up, pages written at most once a second.

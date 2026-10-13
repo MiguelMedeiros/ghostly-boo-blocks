@@ -1,6 +1,6 @@
 /**
  * Every call to the broker goes through one limiter: the broker takes at most 50 requests a second from an app, storage
- * and chat frames counted together, and stops an app that sends ten times that. Blocks keeps to `PER_SECOND` in any
+ * and chat frames counted together, and stops an app that sends ten times that. Boo Blocks keeps to `PER_SECOND` in any
  * one second, chat frames first, so a burst of storage writes never delays a frame to the contact and nothing is ever
  * refused as `too-fast`.
  */

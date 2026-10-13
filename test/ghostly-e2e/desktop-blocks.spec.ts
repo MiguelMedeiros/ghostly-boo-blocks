@@ -1,13 +1,13 @@
 /*
- * Blocks in Ghostly Desktop on macOS, end to end: two Desktop apps (the system WKWebView) on one Mac, driven through
+ * Boo Blocks in Ghostly Desktop on macOS, end to end: two Desktop apps (the system WKWebView) on one Mac, driven through
  * the test driver a debug build carries (Ghostly's e2e/support/desktopMac.ts). Copy this file to a Ghostly
  * checkout's e2e/desktop-macos/ and run it there; see test/ghostly-e2e/README.md.
  *
- * The built Blocks is bundled and signed in the test with a throwaway key and served, with a store listing it, by a
+ * The built Boo Blocks is bundled and signed in the test with a throwaway key and served, with a store listing it, by a
  * local server the debug build's test fetcher reads (apps/ui/src/desktop/appsTestFetch.ts, a build made with
- * VITE_APPS_TEST=1). Ana installs Blocks and opens it in her chat with Bob; Bob installs it from her card. Each
- * Blocks runs in an app window of its own, on the ghostly-app runner. They build at once, see each other's name,
- * and each closes Blocks and opens it again: the world is the same.
+ * VITE_APPS_TEST=1). Ana installs Boo Blocks and opens it in her chat with Bob; Bob installs it from her card. Each
+ * Boo Blocks runs in an app window of its own, on the ghostly-app runner. They build at once, see each other's name,
+ * and each closes Boo Blocks and opens it again: the world is the same.
  */
 import http from "node:http";
 import { readFileSync, writeFileSync } from "node:fs";
@@ -57,11 +57,11 @@ async function storeServer(files: Map<string, Uint8Array>): Promise<{ base: stri
 
 type Driver = MacDesktop["app"] & { in(window: string): Driver; windows(): Promise<string[]> };
 
-/** Blocks's own window: the one that is not `main`. */
+/** Boo Blocks's own window: the one that is not `main`. */
 async function blocksWindow(desktop: MacDesktop): Promise<Driver> {
   const main = desktop.app as Driver;
   let label: string | undefined;
-  await expect.poll(async () => (label = (await main.windows()).find((w) => w !== "main")), { timeout: 60_000, message: "Blocks's window" }).toBeDefined();
+  await expect.poll(async () => (label = (await main.windows()).find((w) => w !== "main")), { timeout: 60_000, message: "Boo Blocks's window" }).toBeDefined();
   const app = main.in(label!);
   await expect.poll(() => app.execute<string | null>(`const e = document.getElementById("app"); return e ? e.dataset.state || null : null;`).catch(() => null), { timeout: 60_000 }).toBe("ready");
   return app;
@@ -131,9 +131,9 @@ async function nickname(p: DesktopPerson, nick: string): Promise<void> {
   await p.go("#/");
 }
 
-test("two Desktop apps on a Mac build in one Blocks world in their chat, and find it again after reopening it", async ({}, testInfo) => {
+test("two Desktop apps on a Mac build in one Boo Blocks world in their chat, and find it again after reopening it", async ({}, testInfo) => {
   test.skip(process.platform !== "darwin", "macOS only: the system WKWebView");
-  test.skip(!DIST || !MANIFEST, "BLOCKS_DIST and BLOCKS_MANIFEST name the built Blocks");
+  test.skip(!DIST || !MANIFEST, "BLOCKS_DIST and BLOCKS_MANIFEST name the built Boo Blocks");
   test.setTimeout(10 * 60_000);
   const relay = new LocalRelay();
   const { default: testnet } = (await import(HYPERDHT_TESTNET)) as { default: (size: number, opts?: { port?: number }) => Promise<{ bootstrap: { host: string; port: number }[]; destroy(): Promise<void> }> };
@@ -170,7 +170,7 @@ test("two Desktop apps on a Mac build in one Blocks world in their chat, and fin
 
     let anaBlocks!: Driver;
     let bobBlocks!: Driver;
-    await test.step("Ana installs Blocks from the store and opens it in the chat", async () => {
+    await test.step("Ana installs Boo Blocks from the store and opens it in the chat", async () => {
       const app = ana.app;
       await ana.go("#/apps");
       await app.click('[data-testid="apps-add"]');
@@ -182,14 +182,14 @@ test("two Desktop apps on a Mac build in one Blocks world in their chat, and fin
       await app.click('[data-testid="app-listing-install"]');
       await expect.poll(() => app.text('[data-testid="app-install"]'), { timeout: 30_000 }).toContain("name");
       await app.click('[data-testid="app-install-confirm"]');
-      await expect.poll(() => app.text('[data-testid="installed-app"]'), { timeout: 30_000 }).toContain("Blocks");
+      await expect.poll(() => app.text('[data-testid="installed-app"]'), { timeout: 30_000 }).toContain("Boo Blocks");
       await ana.go(ana.chatHash!);
       await expect.poll(() => ana.canWrite(), { timeout: 60_000 }).toBe(true);
       await app.click('[data-testid="composer-more"]');
       await app.click('[data-testid="composer-apps"]');
       await app.click('[data-testid="chat-app-open"]');
       anaBlocks = await blocksWindow(desktops.a);
-      await expect.poll(() => statusText(anaBlocks)).toBe("Waiting for your contact to open Blocks");
+      await expect.poll(() => statusText(anaBlocks)).toBe("Waiting for your contact to open Boo Blocks");
       expect(await data(anaBlocks, "ground")).toBe("c1f12dd");
     });
 
@@ -226,7 +226,7 @@ test("two Desktop apps on a Mac build in one Blocks world in their chat, and fin
       await saveWorld(anaBlocks, "desktop-ana");
     });
 
-    await test.step("each closes Blocks and opens it again from the card: the same world", async () => {
+    await test.step("each closes Boo Blocks and opens it again from the card: the same world", async () => {
       for (const [p, key] of [[ana, "a"], [bob, "b"]] as const) {
         const window = key === "a" ? anaBlocks : bobBlocks;
         await window.execute("ghostly.close()");

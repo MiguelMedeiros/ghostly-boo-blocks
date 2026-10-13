@@ -1,5 +1,5 @@
 /**
- * Blocks, a Ghostly mini-app. The runner gives it `window.ghostly` (the broker, see src/vendor/miniApp.ts); opened
+ * Boo Blocks, a Ghostly mini-app. The runner gives it `window.ghostly` (the broker, see src/vendor/miniApp.ts); opened
  * outside the runner in a dev server, it runs alone on a stand-in broker that keeps nothing.
  *
  * Looking around is by dragging: the runner's sandbox has no `allow-pointer-lock`, so the mouse is never captured.

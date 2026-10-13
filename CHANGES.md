@@ -1,6 +1,6 @@
 # Changes
 
-Each version Blocks publishes, newest first. The manifest's `releaseNotes` is the one line people see with an update.
+Each version Boo Blocks publishes, newest first. The manifest's `releaseNotes` is the one line people see with an update.
 
 ## 1.0.0 (not published yet)
 

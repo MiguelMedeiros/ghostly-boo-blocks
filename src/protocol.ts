@@ -1,5 +1,5 @@
 /**
- * The frames Blocks sends to the same app on the contact's side (`apps/1` data frames, WISP 1200), and the checks on
+ * The frames Boo Blocks sends to the same app on the contact's side (`apps/1` data frames, WISP 1200), and the checks on
  * what arrives: everything from the contact is untrusted, and a frame that fails a check is dropped whole.
  *
  *   hello  {t: "hello", p: 1, v, n?, w: [generator, seed, epoch], h: [256 section hashes], a?: 1}

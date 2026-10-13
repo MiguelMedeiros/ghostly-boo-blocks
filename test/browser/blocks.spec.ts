@@ -54,7 +54,7 @@ test("draws the same ground as Node, in the runner's sandbox, with no CSP violat
   const ana = await chat.open("ana", { inChat: false });
   test.skip(!(await drawing(ana)), "no WebGL 2 in this browser here");
   expect(await appData(ana, "ground")).toBe(GROUND_HEX);
-  await expect(ana.frame.locator(".status")).toHaveText("Just you here. Open Blocks in a chat to build with a contact.");
+  await expect(ana.frame.locator(".status")).toHaveText("Just you here. Open Boo Blocks in a chat to build with a contact.");
   await expect(ana.frame.getByRole("dialog")).toBeVisible();
   await dismissHelp(ana);
   await ana.page.waitForTimeout(500);
@@ -85,7 +85,7 @@ test("two people build in one world, see each other's name, and find it again af
   const chat = new Chat(browser);
   const ana = await chat.open("ana", { displayName: "Ana" });
   test.skip(!(await drawing(ana)), "no WebGL 2 in this browser here");
-  await expect(ana.frame.locator(".status")).toHaveText("Waiting for your contact to open Blocks");
+  await expect(ana.frame.locator(".status")).toHaveText("Waiting for your contact to open Boo Blocks");
   const bob = await chat.open("bob", { displayName: "Bob", locale: "pt-BR" });
   await expect(bob.frame.locator(".status")).toHaveText("Construindo com Ana");
   await expect(ana.frame.locator(".status")).toHaveText("Building with Bob");
@@ -132,7 +132,7 @@ test("two people build in one world, see each other's name, and find it again af
   const anaStorage = ana.storage;
   await ana.page.waitForTimeout(1500);
   await ana.close();
-  await expect(bob.frame.locator(".status")).toHaveText("Esperando seu contato abrir o Blocks");
+  await expect(bob.frame.locator(".status")).toHaveText("Esperando seu contato abrir o Boo Blocks");
   await build(bob, "right");
   await build(bob, "right");
   await expect.poll(() => edits(bob)).toBeGreaterThan(together);
