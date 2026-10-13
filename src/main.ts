@@ -218,7 +218,11 @@ async function main(): Promise<void> {
     canvas.focus();
     sound.wake();
     ui!.closeMenus();
-    canvas.setPointerCapture?.(e.pointerId);
+    try {
+      canvas.setPointerCapture(e.pointerId);
+    } catch {
+      // A pointer the browser does not know as active (a synthetic one): the drag still works over the canvas.
+    }
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, startX: e.clientX, startY: e.clientY, moved: false, button: e.button, type: e.pointerType });
   });
   canvas.addEventListener("pointermove", (e) => {

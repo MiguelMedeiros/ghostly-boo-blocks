@@ -81,6 +81,25 @@ async function clickWorld(app: Driver, fx: number, fy: number, button: 0 | 2): P
   );
 }
 
+const SPOTS: [number, number][] = [[0.5, 0.8], [0.5, 0.72], [0.42, 0.78], [0.58, 0.78], [0.5, 0.66], [0.35, 0.8], [0.65, 0.8], [0.5, 0.6], [0.3, 0.7], [0.7, 0.7]];
+
+/** Breaks (0) or places (2) a block, trying spots (and looking further down between rounds) until a cell changes. */
+async function build(app: Driver, button: 0 | 2): Promise<void> {
+  const before = await edits(app);
+  for (let round = 0; round < 3; round++) {
+    for (const [fx, fy] of SPOTS) {
+      await clickWorld(app, fx, fy, button);
+      const deadline = Date.now() + 1000;
+      while (Date.now() < deadline) {
+        if ((await edits(app)) > before) return;
+        await new Promise((done) => setTimeout(done, 100));
+      }
+    }
+    await hold(app, "ArrowDown", 250);
+  }
+  throw new Error("no block within reach");
+}
+
 /** Holds a key for a while, as the window's key events. */
 async function hold(app: Driver, code: string, ms: number): Promise<void> {
   await app.execute(`window.dispatchEvent(new KeyboardEvent("keydown", { code: arguments[0], bubbles: true }));`, code);
@@ -188,13 +207,20 @@ test("two Desktop apps on a Mac build in one Blocks world in their chat, and fin
     let together = 0;
     await test.step("they build at once, and both worlds hold every change", async () => {
       for (const app of [anaBlocks, bobBlocks]) await app.execute(`document.querySelector('[role="dialog"] button')?.click();`);
-      await Promise.all([clickWorld(anaBlocks, 0.5, 0.78, 0), clickWorld(bobBlocks, 0.4, 0.74, 0)]);
-      await Promise.all([clickWorld(anaBlocks, 0.62, 0.72, 2), clickWorld(bobBlocks, 0.75, 0.76, 2)]);
-      await clickWorld(anaBlocks, 0.62, 0.66, 2);
-      await expect.poll(() => edits(anaBlocks), { timeout: 30_000 }).toBeGreaterThanOrEqual(3);
+      await build(anaBlocks, 0);
+      await build(bobBlocks, 0);
+      await build(anaBlocks, 2);
+      await build(bobBlocks, 2);
+      // At the same moment: each breaks the block in the middle of the view (Q).
+      await Promise.all([hold(anaBlocks, "KeyQ", 50), hold(bobBlocks, "KeyQ", 50)]);
+      await expect.poll(async () => (await edits(anaBlocks)) === (await edits(bobBlocks)), { timeout: 30_000 }).toBe(true);
+      await new Promise((done) => setTimeout(done, 1000));
       await expect.poll(async () => (await edits(anaBlocks)) === (await edits(bobBlocks)), { timeout: 30_000 }).toBe(true);
       together = await edits(anaBlocks);
-      await hold(anaBlocks, "KeyW", 900);
+      // Ana walks ahead, jumping any step: Bob sees her ghost and her name.
+      await anaBlocks.execute(`window.dispatchEvent(new KeyboardEvent("keydown", { code: "Space", bubbles: true }));`);
+      await hold(anaBlocks, "KeyW", 2000);
+      await anaBlocks.execute(`window.dispatchEvent(new KeyboardEvent("keyup", { code: "Space", bubbles: true }));`);
       await expect.poll(() => bobBlocks.text(".name-tag"), { timeout: 30_000 }).toBe("Ana");
       await saveWorld(bobBlocks, "desktop-bob-sees-ana");
       await saveWorld(anaBlocks, "desktop-ana");
