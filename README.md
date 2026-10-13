@@ -1,3 +1,5 @@
+<img src="assets/icon.png" alt="Boo Blocks: a ghost holding a grass block" width="128" align="right">
+
 # Boo Blocks
 
 Build a block world together, live in a [Ghostly](https://github.com/MiguelMedeiros/ghostly) chat. Open Boo Blocks in a
@@ -6,7 +8,7 @@ little ghosts with your names, and the world is kept for that chat on both sides
 other is away reaches them the next time you are both in.
 
 Boo Blocks is a Ghostly mini-app ([WISP 1200](https://github.com/MiguelMedeiros/ghostly/blob/dev/docs/wisps/1200-marketplace.md)):
-one self-contained HTML file (about 60 KiB) that runs in the client's sandbox. It has no network and talks to Ghostly
+one self-contained HTML file (about 60 KiB) that runs in the client's sandbox, and its icon. It has no network and talks to Ghostly
 only through `window.ghostly`, the broker: `apps/1` frames of at most 32 KiB to the same app on the contact's side,
 and storage per app and per chat. Its permissions are `chat` and `name`; its `view` is `full`.
 
@@ -82,6 +84,7 @@ Before a release, check these and tick them, with the client versions, in the re
 | `test/browser/` | Playwright specs and their two-page harness with a test broker |
 | `test/ghostly-e2e/` | The spec that runs Boo Blocks in Ghostly's own e2e suite |
 | `ghostly-app.json` | The manifest, without `publisher`, `sequence` and `files` (the CLI writes those) |
+| `assets/icon.png`, `scripts/icon.mjs` | The icon (512 x 512, a ghost holding a grass block), drawn by code: `npm run gen:icon` writes it, and `test/icon.test.ts` checks the committed file is the script's output |
 | `scripts/stage.mjs`, `scripts/bundle.mjs` | `npm run stage`: the folder `ghostly app publish` signs. `npm run check:bundle`: whether a signed bundle is this build, and the store's listing for it |
 | `CHANGES.md`, `docs/PUBLISHING.md`, `docs/protocol.md` | What each version changed, how a version is published, the protocol |
 
@@ -93,5 +96,5 @@ the store and sign the store's index.
 
 ## License
 
-MIT, see [LICENSE](LICENSE). Everything in the built file is this repository's own: no third-party code, the
-textures are drawn by code and the sounds synthesized.
+MIT, see [LICENSE](LICENSE). Everything in the built file and the icon is this repository's own: no third-party
+code, the textures and the icon are drawn by code and the sounds synthesized.

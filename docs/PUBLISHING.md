@@ -49,7 +49,7 @@ On the commit to publish, with a clean tree:
 git switch main && git pull && git status --short     # nothing listed
 npm ci && npm test && npm run build
 npm run digest                    # the page's size and SHA-256: the same as CI's summary for this commit
-npm run stage                     # release/index.html + release/ghostly-app.json
+npm run stage                     # release/index.html, release/icon.png, release/ghostly-app.json
 ```
 
 The build is reproducible (`test/bundle.test.ts` builds twice and compares; the bundler is pinned by `overrides`),

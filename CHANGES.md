@@ -15,3 +15,4 @@ The first version.
   you are both in, so what one built alone reaches the other. The world and where you stood are kept per chat.
 - New world, for both, from the menu.
 - English and Brazilian Portuguese.
+- Its own icon, drawn by code: a ghost holding a grass block.

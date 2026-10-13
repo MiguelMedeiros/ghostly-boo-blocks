@@ -28,7 +28,7 @@ async function blocksStore() {
   const source = JSON.parse(readFileSync(MANIFEST, "utf8")) as AppManifestDraft & { sources?: string[] };
   const publisher = signer("publisher");
   const store = signer("store");
-  const made = await buildAppBundle({ ...source, sequence: 1, sources: [APP_URL] }, [{ path: "index.html", bytes: new Uint8Array(readFileSync(DIST)) }], publisher);
+  const made = await buildAppBundle({ ...source, sequence: 1, sources: [APP_URL] }, [{ path: "icon.png", bytes: new Uint8Array(readFileSync(new URL("assets/icon.png", `file://${MANIFEST}`))) }, { path: "index.html", bytes: new Uint8Array(readFileSync(DIST)) }], publisher);
   const ref = `${toZ32(publisher.publicKey)}/${source.name}`;
   const index: AppStoreIndex = {
     ghostlyStore: 1, key: toZ32(store.publicKey), name: "E2E store", description: "Apps for the end-to-end tests.", kind: "curated", sequence: 1,
@@ -67,7 +67,7 @@ async function build(page: Page, button: "left" | "right"): Promise<void> {
   const view = blocks(page).locator("canvas.view");
   const box = (await view.boundingBox())!;
   const before = await edits(page);
-  for (let round = 0; round < 3; round++) {
+  for (let round = 0; round < 5; round++) {
     for (const [fx, fy] of SPOTS) {
       await view.click({ position: { x: Math.round(box.width * fx), y: Math.round(box.height * fy) }, button });
       try {
@@ -81,6 +81,9 @@ async function build(page: Page, button: "left" | "right"): Promise<void> {
     await page.keyboard.down("ArrowDown");
     await page.waitForTimeout(250);
     await page.keyboard.up("ArrowDown");
+    await page.keyboard.down("ArrowLeft");
+    await page.waitForTimeout(400);
+    await page.keyboard.up("ArrowLeft");
   }
   throw new Error("no block within reach");
 }

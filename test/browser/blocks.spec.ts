@@ -22,7 +22,7 @@ async function build(side: Side, action: "left" | "right" | "tap"): Promise<void
   const view = side.frame.locator("canvas.view");
   const box = (await view.boundingBox())!;
   const before = await edits(side);
-  for (let round = 0; round < 3; round++) {
+  for (let round = 0; round < 5; round++) {
     for (const [fx, fy] of SPOTS) {
       const position = { x: Math.round(box.width * fx), y: Math.round(box.height * fy) };
       if (action === "tap") await view.tap({ position });
@@ -39,6 +39,9 @@ async function build(side: Side, action: "left" | "right" | "tap"): Promise<void
     await side.page.keyboard.down("ArrowDown");
     await side.page.waitForTimeout(250);
     await side.page.keyboard.up("ArrowDown");
+    await side.page.keyboard.down("ArrowLeft");
+    await side.page.waitForTimeout(400);
+    await side.page.keyboard.up("ArrowLeft");
   }
   throw new Error(`${side.name}: no block within reach`);
 }

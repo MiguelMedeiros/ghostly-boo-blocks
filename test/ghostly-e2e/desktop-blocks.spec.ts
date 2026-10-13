@@ -33,7 +33,7 @@ async function blocksStore(): Promise<Map<string, Uint8Array>> {
   const source = JSON.parse(readFileSync(MANIFEST, "utf8")) as AppManifestDraft;
   const publisher = signer("publisher");
   const store = signer("store");
-  const made = await buildAppBundle({ ...source, sequence: 1, sources: [APP_URL] }, [{ path: "index.html", bytes: new Uint8Array(readFileSync(DIST)) }], publisher);
+  const made = await buildAppBundle({ ...source, sequence: 1, sources: [APP_URL] }, [{ path: "icon.png", bytes: new Uint8Array(readFileSync(new URL("assets/icon.png", `file://${MANIFEST}`))) }, { path: "index.html", bytes: new Uint8Array(readFileSync(DIST)) }], publisher);
   const index: AppStoreIndex = {
     ghostlyStore: 1, key: toZ32(store.publicKey), name: "E2E store", description: "Apps for the end-to-end tests.", kind: "curated", sequence: 1,
     expires: Math.floor(Date.now() / 1000) + 30 * 24 * 3600, removed: [], revoked: [],
@@ -86,7 +86,7 @@ const SPOTS: [number, number][] = [[0.5, 0.8], [0.5, 0.72], [0.42, 0.78], [0.58,
 /** Breaks (0) or places (2) a block, trying spots (and looking further down between rounds) until a cell changes. */
 async function build(app: Driver, button: 0 | 2): Promise<void> {
   const before = await edits(app);
-  for (let round = 0; round < 3; round++) {
+  for (let round = 0; round < 5; round++) {
     for (const [fx, fy] of SPOTS) {
       await clickWorld(app, fx, fy, button);
       const deadline = Date.now() + 1000;
@@ -95,7 +95,9 @@ async function build(app: Driver, button: 0 | 2): Promise<void> {
         await new Promise((done) => setTimeout(done, 100));
       }
     }
+    // Facing the sea or a slope: look further down, and turn a little.
     await hold(app, "ArrowDown", 250);
+    await hold(app, "ArrowLeft", 400);
   }
   throw new Error("no block within reach");
 }

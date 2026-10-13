@@ -16,6 +16,7 @@
     "build": "tsc --noEmit -p tsconfig.json && vite build",
     "check:bundle": "node scripts/bundle.mjs",
     "dev": "vite",
+    "gen:icon": "node scripts/icon.mjs",
     "digest": "node scripts/digest.mjs",
     "stage": "node scripts/stage.mjs",
     "test": "vitest run",
