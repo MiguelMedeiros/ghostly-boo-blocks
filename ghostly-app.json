@@ -1,11 +1,11 @@
 {
   "name": "boo-blocks",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "kind": "mini-app",
   "title": "Boo Blocks",
   "tagline": "Build a block world together with a contact",
   "description": "Open Boo Blocks in a chat and build in one world of blocks with your contact: break and place blocks, walk, fly and see each other. The world is kept for that chat on each side, and the two copies merge each time you are both in, so what one of you built alone is there for the other too.",
-  "releaseNotes": "The first version: a world of hills, sand, trees and water, fourteen kinds of block, walking and flying, your contact and their name in the world, and building together live.",
+  "releaseNotes": "A small fix: a Boo Blocks window behind another window keeps its count of changed blocks current.",
   "entry": "index.html",
   "permissions": ["chat", "name"],
   "view": "full",

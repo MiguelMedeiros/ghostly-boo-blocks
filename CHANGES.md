@@ -2,6 +2,11 @@
 
 Each version Boo Blocks publishes, newest first. The manifest's `releaseNotes` is the one line people see with an update.
 
+## 1.0.1 (sequence 2)
+
+- The page's count of changed blocks (`data-edits`, read by the end-to-end tests) is kept current on a timer too, not
+  only in the frame loop: a window behind another gets few animation frames in WKWebView (Desktop on macOS).
+
 ## 1.0.0 (sequence 1)
 
 The first version.
