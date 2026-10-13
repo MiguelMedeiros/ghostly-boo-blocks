@@ -171,6 +171,14 @@ test("two Desktop apps on a Mac install Boo Blocks from the official store and b
 
     await test.step("they build, and Bob sees Ana's ghost with her name", async () => {
       for (const app of [anaBlocks, bobBlocks]) await app.execute(`document.querySelector('[role="dialog"] button')?.click();`);
+      // How each window runs: visible or not, and its animation frames and timer ticks in a second.
+      for (const [who, app] of [["ana", anaBlocks], ["bob", bobBlocks]] as const) {
+        await app.execute(`window.__probe = { frames: 0, ticks: 0 }; const f = () => { window.__probe.frames++; requestAnimationFrame(f); }; requestAnimationFrame(f); setInterval(() => window.__probe.ticks++, 100);`);
+        await new Promise((done) => setTimeout(done, 1000));
+        const probe = await app.execute<string>(`return JSON.stringify({ visibility: document.visibilityState, focus: document.hasFocus(), ...window.__probe, edits: document.getElementById("app").dataset.edits, size: [innerWidth, innerHeight] });`);
+        testInfo.annotations.push({ type: `probe-${who}`, description: probe });
+        console.log(`probe ${who}: ${probe}`);
+      }
       await build(anaBlocks, 0, bobBlocks);
       await build(bobBlocks, 2);
       expect(await edits(bobBlocks)).toBeGreaterThanOrEqual(2);
