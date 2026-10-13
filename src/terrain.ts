@@ -122,10 +122,13 @@ export function generate(seed: number): Uint8Array {
   return cells;
 }
 
-/** Where a person starts: the middle of the world, on the ground (or the water). */
-export function spawnPoint(cells: Uint8Array): [number, number, number] {
-  const x = SIZE_X / 2;
-  const z = SIZE_Z / 2;
+/**
+ * Where a person starts: near the middle of the world, `dx` and `dz` blocks from it, on the ground (or the water).
+ * Each side picks its own small offset, so two people who arrive together do not stand inside each other.
+ */
+export function spawnPoint(cells: Uint8Array, dx = 0, dz = 0): [number, number, number] {
+  const x = SIZE_X / 2 + dx;
+  const z = SIZE_Z / 2 + dz;
   let y = SIZE_Y - 1;
   while (y > 0 && cells[cellIndex(x, y, z)] === AIR) y--;
   return [x + 0.5, y + 1, z + 0.5];

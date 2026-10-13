@@ -11,6 +11,38 @@ async function edits(side: Side): Promise<number> {
   return Number(await appData(side, "edits"));
 }
 
+/** Spots on the world, as fractions of its size, low enough to point at the ground in front, above the hotbar. */
+const SPOTS: [number, number][] = [[0.5, 0.8], [0.5, 0.72], [0.42, 0.78], [0.58, 0.78], [0.5, 0.66], [0.35, 0.8], [0.65, 0.8], [0.5, 0.6], [0.3, 0.7], [0.7, 0.7]];
+
+/**
+ * Breaks (left) or places (right) a block, or taps one on a phone: a person starts a few blocks from the middle at
+ * random, so the spot that reaches a block differs; this tries spots until a cell changes.
+ */
+async function build(side: Side, action: "left" | "right" | "tap"): Promise<void> {
+  const view = side.frame.locator("canvas.view");
+  const box = (await view.boundingBox())!;
+  const before = await edits(side);
+  for (let round = 0; round < 3; round++) {
+    for (const [fx, fy] of SPOTS) {
+      const position = { x: Math.round(box.width * fx), y: Math.round(box.height * fy) };
+      if (action === "tap") await view.tap({ position });
+      else await view.click({ position, button: action });
+      try {
+        await expect.poll(() => edits(side), { timeout: 700 }).toBeGreaterThan(before);
+        return;
+      } catch {
+        // Nothing within reach there: the next spot.
+      }
+    }
+    // Facing the sea or a slope down: look further down and try again.
+    await view.focus();
+    await side.page.keyboard.down("ArrowDown");
+    await side.page.waitForTimeout(250);
+    await side.page.keyboard.up("ArrowDown");
+  }
+  throw new Error(`${side.name}: no block within reach`);
+}
+
 /** Closes the help shown on a first open, and gives the world the keyboard. */
 async function dismissHelp(side: Side): Promise<void> {
   const close = side.frame.getByRole("button", { name: /^(Close|Fechar)$/ });
@@ -35,18 +67,15 @@ test("breaks and places blocks with the mouse, and keeps them after a reload", a
   const ana = await chat.open("ana", { inChat: false });
   test.skip(!(await drawing(ana)), "no WebGL 2 in this browser here");
   await dismissHelp(ana);
-  const view = ana.frame.locator("canvas.view");
-  // Low on the screen (above the hotbar) is the ground just in front. data-edits counts the cells changed.
-  await view.click({ position: { x: 450, y: 480 } });
-  await expect.poll(() => edits(ana)).toBe(1);
-  await view.click({ position: { x: 550, y: 430 }, button: "right" });
-  await expect.poll(() => edits(ana)).toBe(2);
+  await build(ana, "left");
+  await build(ana, "right");
   await ana.frame.locator(".hotbar .slot").nth(6).click();
-  await view.click({ position: { x: 350, y: 430 }, button: "right" });
-  await expect.poll(() => edits(ana)).toBe(3);
+  await build(ana, "right");
+  const made = await edits(ana);
+  expect(made).toBeGreaterThanOrEqual(3);
   await ana.page.waitForTimeout(1500);
   await ana.reload();
-  expect(await edits(ana)).toBe(3);
+  expect(await edits(ana)).toBe(made);
   expect(ana.overLimit).toBe(0);
   await ana.close();
 });
@@ -65,17 +94,26 @@ test("two people build in one world, see each other's name, and find it again af
 
   // Both build at once, from where they start.
   const anaView = ana.frame.locator("canvas.view");
-  const bobView = bob.frame.locator("canvas.view");
-  await Promise.all([anaView.click({ position: { x: 450, y: 470 } }), bobView.click({ position: { x: 350, y: 430 } })]);
-  await Promise.all([anaView.click({ position: { x: 550, y: 430 }, button: "right" }), bobView.click({ position: { x: 750, y: 450 }, button: "right" })]);
+  await build(ana, "left");
+  await build(bob, "left");
+  await build(ana, "right");
+  await build(bob, "right");
+  // And at the same moment: each breaks the block in the middle of their view (Q).
+  await Promise.all([ana.frame.locator("canvas.view").press("KeyQ"), bob.frame.locator("canvas.view").press("KeyQ")]);
   await expect.poll(() => edits(ana)).toBeGreaterThanOrEqual(3);
+  await expect.poll(async () => (await edits(bob)) === (await edits(ana))).toBe(true);
+  // Let the last ticks land, then the count both hold.
+  await ana.page.waitForTimeout(600);
   await expect.poll(async () => (await edits(bob)) === (await edits(ana))).toBe(true);
   const together = await edits(ana);
 
   // Ana walks ahead of Bob: he sees her ghost and her name over it.
   await anaView.focus();
+  // Both start facing the same way, a few blocks apart: two seconds ahead (jumping any step) puts her in his view.
   await ana.page.keyboard.down("KeyW");
-  await ana.page.waitForTimeout(700);
+  await ana.page.keyboard.down("Space");
+  await ana.page.waitForTimeout(2000);
+  await ana.page.keyboard.up("Space");
   await ana.page.keyboard.up("KeyW");
   await expect(bob.frame.locator(".name-tag")).toBeVisible();
   await expect(bob.frame.locator(".name-tag")).toHaveText("Ana");
@@ -85,9 +123,9 @@ test("two people build in one world, see each other's name, and find it again af
   await bob.page.waitForTimeout(1500);
   await bob.reload();
   expect(await edits(bob)).toBe(together);
+  await expect.poll(async () => (await edits(bob)) === (await edits(ana))).toBe(true);
   // Shown once per chat: not again after the reload.
   await expect(bob.frame.getByRole("dialog")).toBeHidden();
-  const bobViewAgain = bob.frame.locator("canvas.view");
   await expect(bob.frame.locator(".status")).toHaveText("Construindo com Ana");
 
   // Ana leaves; Bob builds alone; Ana comes back and gets it.
@@ -95,8 +133,8 @@ test("two people build in one world, see each other's name, and find it again af
   await ana.page.waitForTimeout(1500);
   await ana.close();
   await expect(bob.frame.locator(".status")).toHaveText("Esperando seu contato abrir o Blocks");
-  await bobViewAgain.click({ position: { x: 450, y: 430 }, button: "right" });
-  await bobViewAgain.click({ position: { x: 650, y: 430 }, button: "right" });
+  await build(bob, "right");
+  await build(bob, "right");
   await expect.poll(() => edits(bob)).toBeGreaterThan(together);
   const anaAgain = await chat.open("ana2", { displayName: "Ana", storage: anaStorage });
   expect(await edits(anaAgain)).toBeGreaterThanOrEqual(together);
@@ -119,12 +157,9 @@ test("fits a phone: touch buttons, a hotbar that scrolls within the screen, tap 
   expect(bar.x + bar.width).toBeLessThanOrEqual(375);
   const status = (await ana.frame.locator(".status").boundingBox())!;
   expect(status.x + status.width).toBeLessThanOrEqual(375);
-  const view = ana.frame.locator("canvas.view");
-  await view.tap({ position: { x: 190, y: 420 } });
-  await expect.poll(() => edits(ana)).toBe(1);
+  await build(ana, "tap");
   await ana.frame.locator(".touch .mode").tap();
-  await view.tap({ position: { x: 250, y: 380 } });
-  await expect.poll(() => edits(ana)).toBe(2);
+  await build(ana, "tap");
   await ana.page.screenshot({ path: test.info().outputPath("phone.png") });
   await ana.close();
 });

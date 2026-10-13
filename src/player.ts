@@ -33,7 +33,7 @@ export class Player {
   vy = 0;
   vz = 0;
   yaw = 0;
-  pitch = -0.2;
+  pitch = -0.45;
   flying = false;
   onGround = false;
   /** Feet in water. */

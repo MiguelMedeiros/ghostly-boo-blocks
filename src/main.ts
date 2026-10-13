@@ -141,7 +141,10 @@ async function main(): Promise<void> {
   const world = core.world;
   let firstTime = false;
   const saved = await core.limiter.run(() => api.storage.get(ME_KEY)).catch(() => undefined);
-  player = new Player(spawnPoint(world.cells));
+  // A small step aside, at random: two people arriving together start next to each other, not inside each other.
+  const aside = (): number => Math.floor(Math.random() * 7) - 3;
+  const spawn = () => spawnPoint(world.cells, aside(), aside());
+  player = new Player(spawn());
   if (Array.isArray(saved) && saved.length === 6 && saved.every((n) => typeof n === "number" && Number.isFinite(n))) {
     const [x, y, z, yaw, pitch, flying] = saved as number[];
     if (x >= 0 && z >= 0 && x <= SIZE_X && z <= SIZE_Z && y >= 0 && y <= SIZE_Y + 20) {
@@ -158,7 +161,7 @@ async function main(): Promise<void> {
 
   function respawn(): void {
     if (!player) return;
-    [player.x, player.y, player.z] = spawnPoint(world.cells);
+    [player.x, player.y, player.z] = spawn();
     player.vx = player.vy = player.vz = 0;
   }
 
@@ -294,7 +297,6 @@ async function main(): Promise<void> {
 
   let noticedFull = false;
   setInterval(() => {
-    host.dataset.edits = String(world.edits.size);
     if (core.store.storageFull && !noticedFull) ui!.notice(strings.storageFull, 8000);
     if (core.store.failed && !noticedFull) ui!.notice(strings.storageFailed, 8000);
     noticedFull = core.store.storageFull || core.store.failed;
@@ -308,6 +310,7 @@ async function main(): Promise<void> {
 
   let last = performance.now();
   let lastScene = "";
+  let shownEdits = world.edits.size;
   let stepAt = 0;
   const frame = (now: number) => {
     const dt = Math.min(0.1, (now - last) / 1000);
@@ -330,6 +333,8 @@ async function main(): Promise<void> {
 
     const eye: Vec3 = [p.x, p.y + EYE, p.z];
     const rebuilt = renderer!.rebuild(world, eye, 8) > 0;
+    // How many cells were changed, for the tests (and anyone curious with the inspector).
+    if (world.edits.size !== shownEdits) host.dataset.edits = String((shownEdits = world.edits.size));
     pointed = target(aim);
     const ghosts: Ghost[] = [];
     if (ghost) {
@@ -339,7 +344,9 @@ async function main(): Promise<void> {
       turn = Math.atan2(Math.sin(turn), Math.cos(turn));
       ghost.yaw += turn * k;
       const bob = 0.12 + Math.sin(now / 400) * 0.06;
-      ghosts.push({ at: [ghost.at[0], ghost.at[1] + bob, ghost.at[2]], yaw: ghost.yaw, tint: ghost.tint });
+      // A ghost right where the camera is would fill the screen: it shows once it is a step away.
+      const near = Math.hypot(ghost.at[0] - eye[0], ghost.at[1] + 1 - eye[1], ghost.at[2] - eye[2]) < 1.2;
+      if (!near) ghosts.push({ at: [ghost.at[0], ghost.at[1] + bob, ghost.at[2]], yaw: ghost.yaw, tint: ghost.tint });
     }
     const underwater = world.get(Math.floor(eye[0]), Math.floor(eye[1]), Math.floor(eye[2])) === WATER;
     // Drawn only when something on screen changed: an idle world costs no GPU time (and no battery).

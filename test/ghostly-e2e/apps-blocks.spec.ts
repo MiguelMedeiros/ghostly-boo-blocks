@@ -57,6 +57,34 @@ async function shot(peer: Peer, name: string): Promise<void> {
   if (SHOTS) await peer.page.screenshot({ path: `${SHOTS}/${name}.png` });
 }
 
+const SPOTS: [number, number][] = [[0.5, 0.8], [0.5, 0.72], [0.42, 0.78], [0.58, 0.78], [0.5, 0.66], [0.35, 0.8], [0.65, 0.8], [0.5, 0.6], [0.3, 0.7], [0.7, 0.7]];
+
+/**
+ * Breaks (left) or places (right) a block: a person starts a few blocks from the middle at random, so the spot that
+ * reaches a block differs; this tries spots (looking further down between rounds) until a cell changes.
+ */
+async function build(page: Page, button: "left" | "right"): Promise<void> {
+  const view = blocks(page).locator("canvas.view");
+  const box = (await view.boundingBox())!;
+  const before = await edits(page);
+  for (let round = 0; round < 3; round++) {
+    for (const [fx, fy] of SPOTS) {
+      await view.click({ position: { x: Math.round(box.width * fx), y: Math.round(box.height * fy) }, button });
+      try {
+        await expect.poll(() => edits(page), { timeout: 1000 }).toBeGreaterThan(before);
+        return;
+      } catch {
+        // Nothing within reach there.
+      }
+    }
+    await view.focus();
+    await page.keyboard.down("ArrowDown");
+    await page.waitForTimeout(250);
+    await page.keyboard.up("ArrowDown");
+  }
+  throw new Error("no block within reach");
+}
+
 /** Closes the help a first open shows, if it is there. */
 async function dismissHelp(page: Page): Promise<void> {
   const close = blocks(page).getByRole("dialog").getByRole("button");
@@ -120,25 +148,29 @@ test("two people build in one Blocks world in their chat, and find it again afte
   // Both start on the same ground.
   expect(await blocks(ana.page).locator("#app").getAttribute("data-ground")).toBe(await blocks(bob.page).locator("#app").getAttribute("data-ground"));
 
-  // 4. They build at once: Ana breaks and places, Bob too, and both worlds hold every change.
+  // 4. They build: each breaks and places, then both break at the same moment (Q, the middle of the view).
   const anaView = blocks(ana.page).locator("canvas.view");
   const bobView = blocks(bob.page).locator("canvas.view");
-  const anaBox = (await anaView.boundingBox())!;
-  const bobBox = (await bobView.boundingBox())!;
-  const at = (box: { width: number; height: number }, fx: number, fy: number) => ({ x: Math.round(box.width * fx), y: Math.round(box.height * fy) });
-  await Promise.all([anaView.click({ position: at(anaBox, 0.5, 0.75) }), bobView.click({ position: at(bobBox, 0.4, 0.72) })]);
+  await build(ana.page, "left");
+  await build(bob.page, "left");
   await blocks(ana.page).locator(".hotbar .slot").nth(6).click();
   await blocks(bob.page).locator(".hotbar .slot").nth(4).click();
-  await Promise.all([anaView.click({ position: at(anaBox, 0.62, 0.72), button: "right" }), bobView.click({ position: at(bobBox, 0.75, 0.75), button: "right" })]);
-  await anaView.click({ position: at(anaBox, 0.62, 0.66), button: "right" });
-  await expect.poll(() => edits(ana.page), { timeout: 30_000 }).toBeGreaterThanOrEqual(4);
+  await build(ana.page, "right");
+  await build(bob.page, "right");
+  await build(ana.page, "right");
+  await Promise.all([anaView.press("KeyQ"), bobView.press("KeyQ")]);
+  await expect.poll(async () => (await edits(bob.page)) === (await edits(ana.page)), { timeout: 30_000 }).toBe(true);
+  await ana.page.waitForTimeout(1000);
   await expect.poll(async () => (await edits(bob.page)) === (await edits(ana.page)), { timeout: 30_000 }).toBe(true);
   const together = await edits(ana.page);
+  expect(together).toBeGreaterThanOrEqual(5);
 
-  // 5. Ana walks ahead: Bob sees her ghost with her name over it.
+  // 5. Ana walks ahead (jumping any step): Bob sees her ghost with her name over it.
   await anaView.focus();
   await ana.page.keyboard.down("KeyW");
-  await ana.page.waitForTimeout(900);
+  await ana.page.keyboard.down("Space");
+  await ana.page.waitForTimeout(2000);
+  await ana.page.keyboard.up("Space");
   await ana.page.keyboard.up("KeyW");
   await expect(blocks(bob.page).locator(".name-tag")).toHaveText("Ana", { timeout: 30_000 });
   await expect(blocks(bob.page).locator(".name-tag")).toBeVisible();
@@ -156,9 +188,8 @@ test("two people build in one Blocks world in their chat, and find it again afte
   // 7. Ana closes Blocks; Bob builds alone; Ana opens it again and gets what he built.
   await miniApp(ana.page).getByTestId("mini-app-close").click();
   await expect(status(bob.page)).toHaveText("Waiting for your contact to open Blocks", { timeout: 60_000 });
-  const bobBox2 = (await bobView.boundingBox())!;
-  await bobView.click({ position: at(bobBox2, 0.3, 0.7), button: "right" });
-  await bobView.click({ position: at(bobBox2, 0.5, 0.62), button: "right" });
+  await build(bob.page, "right");
+  await build(bob.page, "right");
   await expect.poll(() => edits(bob.page)).toBeGreaterThan(together);
   await chat(ana).getByTestId("app-card").last().getByTestId("app-card-open").click();
   await expect(blocks(ana.page).locator("#app")).toHaveAttribute("data-state", "ready", { timeout: 30_000 });
