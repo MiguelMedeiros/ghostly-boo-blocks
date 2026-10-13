@@ -89,7 +89,7 @@ async function build(app: Driver, button: 0 | 2): Promise<void> {
   for (let round = 0; round < 5; round++) {
     for (const [fx, fy] of SPOTS) {
       await clickWorld(app, fx, fy, button);
-      const deadline = Date.now() + 1000;
+      const deadline = Date.now() + 1500;
       while (Date.now() < deadline) {
         if ((await edits(app)) > before) return;
         await new Promise((done) => setTimeout(done, 100));

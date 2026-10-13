@@ -306,6 +306,8 @@ async function main(): Promise<void> {
 
   let noticedFull = false;
   setInterval(() => {
+    // Also here, not only in the frame loop: a window out of sight gets few frames or none.
+    if (world.edits.size !== shownEdits) host.dataset.edits = String((shownEdits = world.edits.size));
     if (core.store.storageFull && !noticedFull) ui!.notice(strings.storageFull, 8000);
     if (core.store.failed && !noticedFull) ui!.notice(strings.storageFailed, 8000);
     noticedFull = core.store.storageFull || core.store.failed;
