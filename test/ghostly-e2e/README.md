@@ -22,3 +22,24 @@ installs it from her card, they build at once and see each other's name, each cl
 while Bob builds and gets his work when she comes back, and Bob reloads Ghostly and finds the same world.
 `BLOCKS_SHOTS` (optional) is where it saves screenshots. Pick an `E2E_WEB_PORT` no other run uses: locally the suite
 reuses a server already listening on its port.
+
+## Desktop on macOS
+
+`desktop-blocks.spec.ts` runs the same flow in two Ghostly Desktop apps on one Mac (the system WKWebView), each
+Blocks in its own app window, driven through the test driver of a debug build (Ghostly's `e2e/README.md`, "Desktop
+on macOS"). The build must carry the e2e suite's store switch, `VITE_APPS_TEST=1`:
+
+```sh
+cd /tmp/ghostly-dev
+VITE_APPS_TEST=1 npm run desktop:macos:build      # target/debug/bundle/macos/Ghostly.app
+cp ~/code/ghostly-blocks/test/ghostly-e2e/desktop-blocks.spec.ts e2e/desktop-macos/
+BLOCKS_DIST=~/code/ghostly-blocks/dist/index.html \
+BLOCKS_MANIFEST=~/code/ghostly-blocks/ghostly-app.json \
+BLOCKS_SHOTS=/tmp/blocks-shots \
+GHOSTLY_DESKTOP_APP=/tmp/ghostly-dev/target/debug/bundle/macos/Ghostly.app \
+npx playwright test -c e2e/playwright.desktop-macos.config.ts desktop-blocks
+```
+
+The store's files come from a local server the debug build's test fetcher reads (`window.__ghostlyAppsStore`),
+since WebDriver-less Desktop cannot route requests. `BLOCKS_SHOTS` gets the world as each side drew it (the canvas
+only, read right after a frame). It uses ports 49801 to 49811.

@@ -90,6 +90,20 @@ describe("building together", () => {
     expect(a.overLimit + b.overLimit).toBe(0);
   }, 30_000);
 
+  it("catches up in the end when the channel has no room for some frames while the contact is there", async () => {
+    const [a, b] = pairBrokers();
+    const ana = await side(a);
+    let n = 0;
+    for (let x = 0; x < 128 && n < 9000; x++) for (let z = 0; z < 128 && n < 9000; z++) if (ana.place(x, 59, z, STONE)) n++;
+    await ana.store.flush();
+    let refused = 0;
+    a.noRoom = (v) => (v as { t?: string }).t === "sec" && refused++ < 3;
+    const bob = await side(b);
+    await waitFor(() => converged(ana, bob), 15_000, "Bob to have every edit after the retry");
+    expect(refused).toBeGreaterThanOrEqual(3);
+    expect(a.overLimit + b.overLimit).toBe(0);
+  }, 30_000);
+
   it("takes the contact's new world, and drops the edits of the old one", async () => {
     const [a, b] = pairBrokers();
     const ana = await side(a);

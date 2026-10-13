@@ -33,6 +33,8 @@ export class MockBroker implements MiniAppApi {
   requests = 0;
   /** Milliseconds a frame takes to arrive. */
   latency = 0;
+  /** Return true to refuse a frame with "offline" while the contact is still there (a full channel). */
+  noRoom: (value: MiniAppJson) => boolean = () => false;
   /** Return true to lose a frame on its way (as when the session drops). */
   drop: (value: MiniAppJson) => boolean = () => false;
   displayName: string | undefined;
@@ -116,7 +118,7 @@ export class MockBroker implements MiniAppApi {
       if (busy) return refuse(busy);
       if (!this.inChat) return refuse("not-allowed");
       if (!this.isOpen) return refuse("not-open");
-      if (!this.online) return refuse("offline");
+      if (!this.online || this.noRoom(value)) return refuse("offline");
       const peer = this.peer;
       if (!peer?.isOpen) return refuse("peer-closed");
       if (!strictJson(value)) return refuse("bad-request");

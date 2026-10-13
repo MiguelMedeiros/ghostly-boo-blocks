@@ -31,7 +31,7 @@ Every frame is a JSON object with `t`. Unknown keys are ignored. A frame that fa
 
 | `t` | Keys | When |
 |---|---|---|
-| `hello` | `p` protocol (1), `v` the app version, `n` the person's name (optional, at most 32 characters shown), `w` world id `[generator, seed, epoch]`, `h` the 256 section hashes | When the contact opens Blocks while this side has it open (the `chat.peer` event, or `context().peer` at start), and again after taking a newer world |
+| `hello` | `p` protocol (1), `v` the app version, `n` the person's name (optional, at most 32 characters shown), `w` world id `[generator, seed, epoch]`, `h` the 256 section hashes, `a` 1 to ask for the contact's hello in answer (optional) | When the contact opens Blocks while this side has it open (the `chat.peer` event, or `context().peer` at start), again after taking a newer world, and with `a: 1` two seconds after a frame was refused as `offline` while the contact is still there |
 | `sec` | `w`, `k` section (0 to 255), `e` records | For each section whose hash differs from the contact's hello, when this side has edits there: all of its edits, in frames of at most 3000 records |
 | `tick` | `w`, `p` pose `[x, y, z, yaw, pitch]` (optional), `e` records (optional) | Up to ten a second while both are in: the edits made since the last tick, and the pose when it moved (or once a second) |
 
@@ -53,7 +53,9 @@ A `sec` or `tick` whose `w` is not this side's world is ignored.
    it has edits, and merges what it gets. Both end with the union.
 
 Nothing is queued while the contact is away: a `tick` that does not go is lost, and the next hello finds what
-differs. **New world** (the menu) is a new random seed with the epoch one higher, so it wins on both sides.
+differs. The client answers `offline` also when the chat's channel has no room for a frame (a long catch-up on a slow
+link) while the contact is still there; Blocks then says hello again with `a: 1` two seconds later, and both sides
+send what still differs. **New world** (the menu) is a new random seed with the epoch one higher, so it wins on both sides.
 
 ## Storage
 

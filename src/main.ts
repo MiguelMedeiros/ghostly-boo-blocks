@@ -78,8 +78,13 @@ async function main(): Promise<void> {
       showPeer(state, contact);
       if (state === "here" && lastContact === null) {
         lastContact = contactName(contact);
-        ui?.notice(strings.contactCame(lastContact), 2500);
-        sound.hello();
+        // The name comes in the contact's hello, a moment after the peer event: the notice waits for it.
+        setTimeout(() => {
+          if (lastContact === null) return;
+          lastContact = contactName(core.session.contact);
+          ui?.notice(strings.contactCame(lastContact), 2500);
+          sound.hello();
+        }, 700);
       } else if (state !== "here" && lastContact !== null) {
         ui?.notice(strings.contactLeft(lastContact));
         lastContact = null;

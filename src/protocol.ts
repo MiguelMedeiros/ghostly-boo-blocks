@@ -2,9 +2,10 @@
  * The frames Blocks sends to the same app on the contact's side (`apps/1` data frames, WISP 1200), and the checks on
  * what arrives: everything from the contact is untrusted, and a frame that fails a check is dropped whole.
  *
- *   hello  {t: "hello", p: 1, v, n?, w: [generator, seed, epoch], h: [256 section hashes]}
+ *   hello  {t: "hello", p: 1, v, n?, w: [generator, seed, epoch], h: [256 section hashes], a?: 1}
  *          Sent when both sides have the app open (and again whenever the contact opens it again). Says which world
- *          this side has and a hash of each section's edits.
+ *          this side has and a hash of each section's edits. `a: 1` asks the contact to answer with its own hello
+ *          (sent after a frame found no room in the channel, to find what did not go).
  *   sec    {t: "sec", w, k: section, e: records}
  *          One section's edits (or part of them), sent for each section whose hash differs from the contact's.
  *   tick   {t: "tick", w, p?: [x, y, z, yaw, pitch], e?: records}
@@ -51,7 +52,7 @@ export const idOf = (tag: WorldTag): WorldId => ({ generator: tag[0], seed: tag[
 
 /** What arrived, checked: a hello, a section's edits (as [index in section, stamp]), or a tick (edits as [cell, stamp]). */
 export type Incoming =
-  | { t: "hello"; protocol: number; version: string; name?: string; world: WorldId; hashes: number[] }
+  | { t: "hello"; protocol: number; version: string; name?: string; world: WorldId; hashes: number[]; ask?: boolean }
   | { t: "sec"; world: WorldId; section: number; edits: [number, number][] }
   | { t: "tick"; world: WorldId; pose?: Pose; edits: [number, number][] };
 
@@ -87,7 +88,7 @@ export function parseFrame(data: MiniAppJson): Incoming | null {
     if (!Number.isInteger(data.p) || (data.p as number) < 1 || typeof data.v !== "string" || data.v.length > 64 || !world) return null;
     if (!Array.isArray(data.h) || data.h.length !== SECTION_COUNT || !data.h.every((n) => Number.isInteger(n) && (n as number) >= -0x80000000 && (n as number) <= 0x7fffffff)) return null;
     const name = cleanName(data.n);
-    return { t: "hello", protocol: data.p as number, version: data.v, ...(name ? { name } : {}), world, hashes: data.h as number[] };
+    return { t: "hello", protocol: data.p as number, version: data.v, ...(name ? { name } : {}), world, hashes: data.h as number[], ...(data.a === 1 ? { ask: true } : {}) };
   }
   if (data.t === "sec") {
     const world = worldOf(data.w);

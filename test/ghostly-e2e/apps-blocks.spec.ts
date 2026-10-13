@@ -121,6 +121,7 @@ test("two people build in one Blocks world in their chat, and find it again afte
   await ana.page.getByTestId("app-store").filter({ hasText: "E2E store" }).getByTestId("app-listing-install").click();
   const install = ana.page.getByTestId("app-install");
   await expect(install.getByTestId("app-permission-name")).toBeVisible();
+  await ana.page.waitForTimeout(600);
   await shot(ana, "01-install");
   await install.getByTestId("app-install-confirm").click();
   await expect(ana.page.getByTestId("installed-app")).toContainText(store.title);

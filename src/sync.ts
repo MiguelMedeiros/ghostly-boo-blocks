@@ -20,6 +20,8 @@ import { cellOfLocal, localOf, newerWorld, SECTION_COUNT, sameWorld, type World,
 export const TICK_MS = 100;
 /** Section frames sent a second at most while catching up (ticks keep their own ten). */
 export const SECTION_FRAMES_PER_SECOND = 20;
+/** How long to wait before asking again after a frame did not go for want of room. */
+export const RETRY_MS = 2000;
 
 export type PeerState = "alone" | "waiting" | "here";
 
@@ -56,6 +58,7 @@ export class Session {
   private readonly sectionQueue: number[] = [];
   private sectionPump: Promise<void> | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
+  private retry: ReturnType<typeof setTimeout> | null = null;
   private readonly unsubscribe: (() => void)[] = [];
   /** Frames sent and received, for the tests and the status line. */
   readonly counts = { sent: 0, received: 0, dropped: 0 };
@@ -103,7 +106,9 @@ export class Session {
 
   stop(): void {
     if (this.timer) clearInterval(this.timer);
+    if (this.retry) clearTimeout(this.retry);
     this.timer = null;
+    this.retry = null;
     for (const off of this.unsubscribe.splice(0)) off();
   }
 
@@ -153,14 +158,27 @@ export class Session {
         // The contact is gone for now; the next hello catches up.
         this.outbox = [];
         this.sectionQueue.length = 0;
+        // "offline" also answers a frame the chat's channel had no room for while the contact is still here (a
+        // catch-up of many sections on a slow link). If they are still here in a moment, ask again for the
+        // contact's hashes: whatever did not go is found and sent then. A real disconnection ends in a peer event.
+        if (code === "offline") this.retryLater();
       }
       return false;
     }
   }
 
-  private async sayHello(): Promise<void> {
+  private retryLater(): void {
+    if (this.retry) return;
+    this.retry = setTimeout(() => {
+      this.retry = null;
+      if (this.state === "here" && this.timer) void this.sayHello(true);
+    }, RETRY_MS);
+  }
+
+  /** Says hello; `ask` asks the contact to answer with theirs, even if they already said it on this open. */
+  private async sayHello(ask = false): Promise<void> {
     this.helloSent = true;
-    const hello = { t: "hello", p: PROTOCOL, v: this.me.version, ...(this.me.name ? { n: this.me.name } : {}), w: tagOf(this.world.id), h: this.world.hashes32() };
+    const hello = { t: "hello", p: PROTOCOL, v: this.me.version, ...(this.me.name ? { n: this.me.name } : {}), w: tagOf(this.world.id), h: this.world.hashes32(), ...(ask ? { a: 1 } : {}) };
     if (!(await this.send(hello))) this.helloSent = false;
   }
 
@@ -218,7 +236,7 @@ export class Session {
       await this.sayHello();
       return;
     }
-    if (!this.helloSent) await this.sayHello();
+    if (!this.helloSent || frame.ask) await this.sayHello();
     for (let s = 0; s < SECTION_COUNT; s++) {
       if (frame.hashes[s] !== this.world.sectionHash(s) && this.world.sectionHash(s) !== 0 && !this.sectionQueue.includes(s)) this.sectionQueue.push(s);
     }
