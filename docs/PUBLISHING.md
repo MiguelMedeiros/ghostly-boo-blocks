@@ -16,10 +16,10 @@ and is checked by CI; "Sign" and the store's index are the owner's steps.
 | | |
 |---|---|
 | Manifest `name` | `boo-blocks` (the app's permanent id with the key) |
-| Boo Blocks's reference | `<publisher key>/boo-blocks`, known once the first version is signed |
-| Publisher key file (owner's machine only) | `~/ghostly-keys/boo-blocks-publisher.key`, made by the first `ghostly app publish` |
-| Store folder | `apps/boo-blocks.<first 16 characters of the publisher key>/` |
-| Published so far | Nothing yet. See [CHANGES.md](../CHANGES.md) |
+| Boo Blocks's reference | `bt85mdaupa7sya7uucqw3nac5nwd5coxz65spe6newcjszwn1fyo/boo-blocks` |
+| Publisher key file (owner's machine only) | `~/ghostly-keys/boo-blocks-publisher.key` (fingerprint `bt85 mdau pa7s ya7u`) |
+| Store folder | `apps/boo-blocks.bt85mdaupa7sya7u/` |
+| Published so far | 1.0.0 (sequence 1). See [CHANGES.md](../CHANGES.md) |
 
 ## 1. Prepare the version (a pull request)
 

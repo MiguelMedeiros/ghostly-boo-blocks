@@ -22,7 +22,7 @@ import { fileURLToPath } from "node:url";
  * the key then, and the commit that adds app.ghostlyapp sets it here (docs/PUBLISHING.md, step 4). Until it is set,
  * `check:bundle` takes the key from the bundle and says so.
  */
-export const PUBLISHER = "";
+export const PUBLISHER = "bt85mdaupa7sya7uucqw3nac5nwd5coxz65spe6newcjszwn1fyo";
 export const REPO = "MiguelMedeiros/ghostly-boo-blocks";
 export const BUNDLE = "app.ghostlyapp";
 /** Where clients read newer bundles: this repository's HEAD. The manifest's `sources` names it. */
