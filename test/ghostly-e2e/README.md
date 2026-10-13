@@ -43,3 +43,11 @@ npx playwright test -c e2e/playwright.desktop-macos.config.ts desktop-blocks
 The store's files come from a local server the debug build's test fetcher reads (`window.__ghostlyAppsStore`),
 since WebDriver-less Desktop cannot route requests. `BLOCKS_SHOTS` gets the world as each side drew it (the canvas
 only, read right after a frame). It uses ports 49801 to 49811.
+
+## From the official store
+
+`apps-blocks-store.spec.ts` (tag `@network`) needs the internet and no build of Boo Blocks: Ghostly's preloaded store
+is read from GitHub, Boo Blocks is installed from its listing (the published bundle, signed by the Boo Blocks key),
+opened in a chat, installed by the contact from the card, and both build. Copy it to `e2e/web/` and run
+`npx playwright test -c e2e/playwright.config.ts --project=web apps-blocks-store`. Right after a store change, raw
+GitHub serves the old index for up to 5 minutes; the spec presses Refresh until the new one shows.
