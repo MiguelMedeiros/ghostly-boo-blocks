@@ -107,11 +107,13 @@ async function main(): Promise<void> {
   const language = stringsFor(context.locale ?? navigator.language);
   strings = language.strings;
   document.documentElement.lang = language.lang;
+  document.documentElement.dir = language.dir;
   document.title = strings.title;
 
   let selected = 0;
   let placing = false;
-  const held = { forward: false, back: false, left: false, right: false, jump: false, down: false };
+  const held = { jump: false, down: false };
+  const stick = { forward: 0, strafe: 0 };
   ui = new Ui(host, strings, {
     select: (i) => choose(i),
     newWorld: () => {
@@ -125,6 +127,11 @@ async function main(): Promise<void> {
     },
     hold: (key, down) => {
       held[key] = down;
+      sound.wake();
+    },
+    stick: (forward, strafe) => {
+      stick.forward = forward;
+      stick.strafe = strafe;
       sound.wake();
     },
   });
@@ -283,6 +290,7 @@ async function main(): Promise<void> {
   window.addEventListener("blur", () => {
     keys.clear();
     for (const k of Object.keys(held) as (keyof typeof held)[]) held[k] = false;
+    stick.forward = stick.strafe = 0;
   });
 
   // Where the person stands is kept every few seconds and when the page goes.
@@ -332,8 +340,9 @@ async function main(): Promise<void> {
     if (down("ArrowRight")) p.yaw -= TURN * dt;
     if (down("ArrowUp")) p.pitch = Math.min(1.55, p.pitch + TURN * 0.6 * dt);
     if (down("ArrowDown")) p.pitch = Math.max(-1.55, p.pitch - TURN * 0.6 * dt);
-    const forward = (down("KeyW") || held.forward ? 1 : 0) - (down("KeyS") || held.back ? 1 : 0);
-    const strafe = (down("KeyD") || held.right ? 1 : 0) - (down("KeyA") || held.left ? 1 : 0);
+    const clamp = (n: number) => Math.max(-1, Math.min(1, n));
+    const forward = clamp((down("KeyW") ? 1 : 0) - (down("KeyS") ? 1 : 0) + stick.forward);
+    const strafe = clamp((down("KeyD") ? 1 : 0) - (down("KeyA") ? 1 : 0) + stick.strafe);
     p.update(world, { forward, strafe, jump: down("Space") || held.jump, down: down("ShiftLeft", "ShiftRight") || held.down }, dt);
     p.unstick(world);
     if (p.walked - stepAt > 2.1) {

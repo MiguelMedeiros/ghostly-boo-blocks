@@ -30,8 +30,8 @@ body { font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; 
 .buttons { display: flex; gap: 6px; pointer-events: auto; }
 button { font: inherit; color: inherit; cursor: pointer; }
 .round { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: var(--paper); font-size: 17px; font-weight: 700; line-height: 1; padding: 0; }
-.menu { position: absolute; top: 50px; right: 8px; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 4px; display: flex; flex-direction: column; min-width: 170px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
-.menu .item { text-align: left; background: none; border: 0; padding: 9px 12px; border-radius: 8px; }
+.menu { position: absolute; top: 50px; inset-inline-end: 8px; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 4px; display: flex; flex-direction: column; min-width: 170px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.menu .item { text-align: start; background: none; border: 0; padding: 9px 12px; border-radius: 8px; }
 .menu .item:hover, .menu .item:focus-visible { background: var(--line); }
 .sheet { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(10, 8, 20, 0.35); padding: 16px; }
 .card { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; max-width: 420px; width: 100%; max-height: 100%; overflow: auto; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
@@ -49,7 +49,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .slot { position: relative; flex: none; width: 40px; height: 40px; padding: 3px; border-radius: 8px; border: 2px solid transparent; background: transparent; }
 .slot.selected { border-color: var(--accent); background: var(--line); }
 .slot .swatch { width: 100%; height: 100%; display: block; image-rendering: pixelated; border-radius: 3px; }
-.slot .key { position: absolute; right: 2px; bottom: 0; font-size: 10px; font-weight: 700; color: #fff; text-shadow: 0 0 2px #000, 0 0 2px #000; }
+.slot .key { position: absolute; inset-inline-end: 2px; bottom: 0; font-size: 10px; font-weight: 700; color: #fff; text-shadow: 0 0 2px #000, 0 0 2px #000; }
 .block-name { position: absolute; left: 50%; bottom: 66px; transform: translateX(-50%); padding: 3px 10px; border-radius: 8px; background: rgba(20, 18, 30, 0.6); color: #fff; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
 .block-name.shown { opacity: 1; }
 .fatal { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; background: var(--paper); font-size: 16px; }
@@ -57,11 +57,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 @media (pointer: coarse) {
   .touch { display: block; position: absolute; inset: auto 0 64px 0; pointer-events: none; }
   .touch button { pointer-events: auto; touch-action: none; border: 1px solid var(--line); background: var(--paper); border-radius: 12px; width: 52px; height: 52px; font-size: 20px; }
-  .pad { position: absolute; left: 12px; bottom: 0; width: 164px; height: 164px; }
-  .pad .up { position: absolute; left: 56px; top: 0; }
-  .pad .left { position: absolute; left: 0; top: 56px; }
-  .pad .right { position: absolute; right: 0; top: 56px; }
-  .pad .down { position: absolute; left: 56px; bottom: 0; }
+  .stick { position: absolute; left: 16px; bottom: 0; width: 140px; height: 140px; border-radius: 50%; border: 1px solid var(--line); background: var(--paper); opacity: 0.85; pointer-events: auto; touch-action: none; display: grid; place-items: center; }
+  .stick .knob { width: 60px; height: 60px; border-radius: 50%; background: var(--accent); opacity: 0.7; pointer-events: none; }
+  .stick.held .knob { opacity: 1; }
   .side { position: absolute; right: 12px; bottom: 0; display: grid; grid-template-columns: 52px 52px; gap: 8px; }
   .side .fly { font-size: 13px; }
   .side .on { background: var(--accent); color: #fff; }

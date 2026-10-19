@@ -1,9 +1,10 @@
 /**
  * The page around the world: the status line, the hotbar, the menu, the help, short notices, the contact's name tag,
- * and buttons for touch screens. Built with createElement and textContent only: the contact's name is never markup.
+ * and a stick and buttons for touch screens. Built with createElement and textContent only: the contact's name is never markup.
  */
 import { BLOCKS, PALETTE } from "./blocks.ts";
 import { drawTile, TILE_PX } from "./render/atlas.ts";
+import { readStick } from "./stick.ts";
 import type { Strings } from "./strings.ts";
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] {
@@ -29,7 +30,9 @@ export interface UiActions {
   toggleFly(): void;
   toggleMode(): void;
   /** A touch button held or let go. */
-  hold(key: "forward" | "back" | "left" | "right" | "jump" | "down", down: boolean): void;
+  hold(key: "jump" | "down", down: boolean): void;
+  /** The touch stick: -1 to 1 back to forward and left to right; both 0 when let go. */
+  stick(forward: number, strafe: number): void;
 }
 
 export class Ui {
@@ -153,7 +156,7 @@ export class Ui {
     host.append(this.hotbar);
 
     const touch = el("div", "touch");
-    const pad = el("div", "pad");
+    const stick = this.stick(s.stick);
     const hold = (label: string, text: string, key: Parameters<UiActions["hold"]>[0], area: string) => {
       const b = el("button", `hold ${area}`, text);
       b.setAttribute("aria-label", label);
@@ -168,7 +171,6 @@ export class Ui {
       b.addEventListener("pointerleave", up);
       return b;
     };
-    pad.append(hold(s.moveForward, "▲", "forward", "up"), hold(s.moveLeft, "◀", "left", "left"), hold(s.moveRight, "▶", "right", "right"), hold(s.moveBack, "▼", "back", "down"));
     const side = el("div", "side");
     this.modeButton = el("button", "mode", "⛏");
     this.modeButton.setAttribute("aria-label", s.breakMode);
@@ -176,8 +178,46 @@ export class Ui {
     this.flyButton = el("button", "fly", s.fly);
     this.flyButton.addEventListener("click", () => actions.toggleFly());
     side.append(this.modeButton, this.flyButton, hold(s.jump, "⤒", "jump", "jump"), hold(s.down, "⤓", "down", "sink"));
-    touch.append(pad, side);
+    touch.append(stick, side);
     host.append(touch);
+  }
+
+  /** The stick: a finger put anywhere on it walks towards where it is, from the centre; it follows that finger only. */
+  private stick(label: string): HTMLElement {
+    const base = el("div", "stick");
+    base.setAttribute("role", "img");
+    base.setAttribute("aria-label", label);
+    const knob = el("div", "knob");
+    base.append(knob);
+    let finger: number | null = null;
+    const follow = (e: PointerEvent) => {
+      const box = base.getBoundingClientRect();
+      const reading = readStick(e.clientX - (box.left + box.width / 2), e.clientY - (box.top + box.height / 2), box.width / 2);
+      knob.style.transform = `translate(${Math.round(reading.knob[0])}px, ${Math.round(reading.knob[1])}px)`;
+      this.actions.stick(reading.forward, reading.strafe);
+    };
+    const release = (e: PointerEvent) => {
+      if (e.pointerId !== finger) return;
+      finger = null;
+      knob.style.transform = "";
+      base.classList.remove("held");
+      this.actions.stick(0, 0);
+    };
+    base.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      if (finger !== null) return;
+      finger = e.pointerId;
+      base.setPointerCapture?.(e.pointerId);
+      base.classList.add("held");
+      follow(e);
+    });
+    base.addEventListener("pointermove", (e) => {
+      if (e.pointerId === finger) follow(e);
+    });
+    base.addEventListener("pointerup", release);
+    base.addEventListener("pointercancel", release);
+    base.addEventListener("lostpointercapture", release);
+    return base;
   }
 
   setStatus(text: string): void {
