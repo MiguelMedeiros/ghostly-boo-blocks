@@ -147,13 +147,13 @@ test("two people build in one world, see each other's name, and find it again af
   await bob.close();
 });
 
-test("fits a phone: touch buttons, a hotbar that scrolls within the screen, tap to break and to place", async ({ browser, browserName }) => {
+test("fits a phone: a touch stick and buttons, a hotbar that scrolls within the screen, tap to break and to place", async ({ browser, browserName }) => {
   test.skip(browserName !== "chromium", "touch emulation: Chromium");
   const chat = new Chat(browser);
   const ana = await chat.open("ana", { inChat: false, viewport: { width: 375, height: 667 }, touch: true });
   test.skip(!(await drawing(ana)), "no WebGL 2 in this browser here");
   await dismissHelp(ana);
-  await expect(ana.frame.locator(".touch .pad")).toBeVisible();
+  await expect(ana.frame.locator(".touch .stick")).toBeVisible();
   await expect(ana.frame.locator(".touch .mode")).toBeVisible();
   const bar = (await ana.frame.locator(".hotbar").boundingBox())!;
   expect(bar.x).toBeGreaterThanOrEqual(0);
@@ -182,5 +182,31 @@ test("reads in Arabic from right to left, the menu opening under its button", as
   expect(button.x).toBeLessThan(450);
   expect(menu.x).toBeLessThanOrEqual(button.x);
   expect(menu.x + menu.width).toBeGreaterThanOrEqual(button.x + button.width);
+  await ana.close();
+});
+
+test("walks with the touch stick: a thumb pushed up moves the person, the knob follows it and comes back", async ({ browser, browserName }) => {
+  test.skip(browserName !== "chromium", "touch events over CDP: Chromium");
+  const chat = new Chat(browser);
+  const ana = await chat.open("ana", { inChat: false, viewport: { width: 375, height: 667 }, touch: true });
+  test.skip(!(await drawing(ana)), "no WebGL 2 in this browser here");
+  await dismissHelp(ana);
+  await expect.poll(() => ana.storage.has("me")).toBe(true);
+  const pose = () => JSON.parse(ana.storage.get("me")!) as number[];
+  const [x0, , z0] = pose();
+  const stick = ana.frame.locator(".touch .stick");
+  const box = (await stick.boundingBox())!;
+  const [cx, cy] = [box.x + box.width / 2, box.y + box.height / 2];
+  const cdp = await ana.page.context().newCDPSession(ana.page);
+  const touch = (type: "touchStart" | "touchMove" | "touchEnd", points: { x: number; y: number }[]) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: points });
+  await touch("touchStart", [{ x: cx, y: cy }]);
+  for (let i = 1; i <= 5; i++) await touch("touchMove", [{ x: cx, y: cy - (box.height / 2) * (i / 5) }]);
+  const knob = (await stick.locator(".knob").boundingBox())!;
+  expect(knob.y + knob.height / 2).toBeLessThan(cy - box.height / 4);
+  await ana.page.waitForTimeout(1500);
+  await touch("touchEnd", []);
+  await expect.poll(async () => (await stick.locator(".knob").boundingBox())!.y + knob.height / 2).toBeCloseTo(cy, 0);
+  // The pose is kept every 5 s.
+  await expect.poll(() => { const [x, , z] = pose(); return Math.hypot(x - x0, z - z0); }, { timeout: 8000 }).toBeGreaterThan(2);
   await ana.close();
 });

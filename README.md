@@ -21,7 +21,7 @@ and storage per app and per chat. Its permissions are `chat` and `name`; its `vi
 - **Controls:** the runner's sandbox has no `allow-pointer-lock`, so the mouse is never captured: drag to look,
   WASD to walk, Space to jump (or swim, or fly up), Shift to fly down, F to fly, click to break the block under the
   cursor, right-click to place, 1–9 or the wheel for the block, arrows to turn, Q and E to break and place at the
-  centre. Touch screens get arrows, jump, fly and a break/place switch; tap acts, drag looks.
+  centre. Touch screens get a stick to walk (slower near its middle), jump, fly and a break/place switch; tap acts, drag looks.
 - **The world:** the ground from a seed (integer-only noise, the same bytes in every engine), plus the cells people
   changed, each with a Lamport clock: the higher clock wins, so both sides merge to the same world in any order. Only
   the edits are stored (pages under 64 KiB, at most 400,000 cells, under 5 MiB) and sent. On every open both sides
@@ -60,7 +60,7 @@ Before a release, check these and tick them, with the client versions, in the re
 - **Desktop (macOS, WKWebView):** Boo Blocks opens in its window, draws, drag looks, keys move, both mouse buttons build,
   and a contact on the web sees the edits and the ghost.
 - **Sounds:** after a click inside the frame, breaking, placing and footsteps are heard on web and Desktop.
-- **Touch (iOS Safari, Android Chrome):** drag looks without scrolling the page, arrows walk, tap breaks or places as
+- **Touch (iOS Safari, Android Chrome):** drag looks without scrolling the page, the stick walks, tap breaks or places as
   the switch says.
 - **Performance:** a laptop without a fast GPU keeps the world smooth while walking.
 

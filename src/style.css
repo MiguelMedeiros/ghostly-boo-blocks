@@ -57,11 +57,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 @media (pointer: coarse) {
   .touch { display: block; position: absolute; inset: auto 0 64px 0; pointer-events: none; }
   .touch button { pointer-events: auto; touch-action: none; border: 1px solid var(--line); background: var(--paper); border-radius: 12px; width: 52px; height: 52px; font-size: 20px; }
-  .pad { position: absolute; left: 12px; bottom: 0; width: 164px; height: 164px; }
-  .pad .up { position: absolute; left: 56px; top: 0; }
-  .pad .left { position: absolute; left: 0; top: 56px; }
-  .pad .right { position: absolute; right: 0; top: 56px; }
-  .pad .down { position: absolute; left: 56px; bottom: 0; }
+  .stick { position: absolute; left: 16px; bottom: 0; width: 140px; height: 140px; border-radius: 50%; border: 1px solid var(--line); background: var(--paper); opacity: 0.85; pointer-events: auto; touch-action: none; display: grid; place-items: center; }
+  .stick .knob { width: 60px; height: 60px; border-radius: 50%; background: var(--accent); opacity: 0.7; pointer-events: none; }
+  .stick.held .knob { opacity: 1; }
   .side { position: absolute; right: 12px; bottom: 0; display: grid; grid-template-columns: 52px 52px; gap: 8px; }
   .side .fly { font-size: 13px; }
   .side .on { background: var(--accent); color: #fff; }

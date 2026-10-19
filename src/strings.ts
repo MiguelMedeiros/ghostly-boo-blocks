@@ -37,12 +37,10 @@ export interface Strings {
   walk: string;
   jump: string;
   down: string;
+  /** The touch stick, for screen readers. */
+  stick: string;
   breakMode: string;
   placeMode: string;
-  moveForward: string;
-  moveBack: string;
-  moveLeft: string;
-  moveRight: string;
   blocks: Record<BlockKind["key"], string>;
 }
 
@@ -79,7 +77,7 @@ export const en: Strings = {
   helpTouch: [
     ["Drag", "Look around"],
     ["Tap", "Break or place, as the hammer button says"],
-    ["Arrows", "Walk"],
+    ["Stick", "Walk, slower near the middle"],
   ],
   helpTogether: "In a chat, your contact builds in the same world. Each of you keeps it for this chat, and the two merge whenever you are both in.",
   close: "Close",
@@ -93,12 +91,9 @@ export const en: Strings = {
   walk: "Walk",
   jump: "Jump",
   down: "Down",
+  stick: "Walk: drag the stick",
   breakMode: "Breaking: tap to place instead",
   placeMode: "Placing: tap to break instead",
-  moveForward: "Forward",
-  moveBack: "Back",
-  moveLeft: "Left",
-  moveRight: "Right",
   blocks: {
     grass: "Grass",
     dirt: "Dirt",
@@ -151,7 +146,7 @@ export const pt: Strings = {
   helpTouch: [
     ["Arrastar", "Olhar em volta"],
     ["Tocar", "Quebrar ou colocar, como diz o botão do martelo"],
-    ["Setas", "Andar"],
+    ["Analógico", "Andar, mais devagar perto do centro"],
   ],
   helpTogether: "Numa conversa, seu contato constrói no mesmo mundo. Cada um guarda o mundo desta conversa, e os dois se juntam sempre que vocês estão dentro.",
   close: "Fechar",
@@ -165,12 +160,9 @@ export const pt: Strings = {
   walk: "Andar",
   jump: "Pular",
   down: "Descer",
+  stick: "Andar: arraste o analógico",
   breakMode: "Quebrando: toque para colocar",
   placeMode: "Colocando: toque para quebrar",
-  moveForward: "Frente",
-  moveBack: "Trás",
-  moveLeft: "Esquerda",
-  moveRight: "Direita",
   blocks: {
     grass: "Grama",
     dirt: "Terra",
@@ -223,7 +215,7 @@ export const es: Strings = {
   helpTouch: [
     ["Arrastrar", "Mirar alrededor"],
     ["Tocar", "Romper o colocar, según diga el botón del martillo"],
-    ["Flechas", "Caminar"],
+    ["Joystick", "Caminar, más despacio cerca del centro"],
   ],
   helpTogether: "En un chat, tu contacto construye en el mismo mundo. Cada uno lo guarda para este chat, y las dos copias se unen siempre que ambos estén dentro.",
   close: "Cerrar",
@@ -237,12 +229,9 @@ export const es: Strings = {
   walk: "Caminar",
   jump: "Saltar",
   down: "Bajar",
+  stick: "Caminar: arrastra el joystick",
   breakMode: "Rompiendo: toca para colocar",
   placeMode: "Colocando: toca para romper",
-  moveForward: "Adelante",
-  moveBack: "Atrás",
-  moveLeft: "Izquierda",
-  moveRight: "Derecha",
   blocks: {
     grass: "Hierba",
     dirt: "Tierra",
@@ -295,7 +284,7 @@ export const fr: Strings = {
   helpTouch: [
     ["Glisser", "Regarder autour"],
     ["Toucher", "Casser ou poser, selon le bouton du marteau"],
-    ["Flèches", "Marcher"],
+    ["Joystick", "Marcher, plus lentement près du centre"],
   ],
   helpTogether: "Dans une conversation, votre contact construit dans le même monde. Chacun le garde pour cette conversation, et les deux se rejoignent chaque fois que vous y êtes tous les deux.",
   close: "Fermer",
@@ -309,12 +298,9 @@ export const fr: Strings = {
   walk: "Marcher",
   jump: "Sauter",
   down: "Descendre",
+  stick: "Marcher : faites glisser le joystick",
   breakMode: "Casser : touchez pour poser",
   placeMode: "Poser : touchez pour casser",
-  moveForward: "Avancer",
-  moveBack: "Reculer",
-  moveLeft: "Gauche",
-  moveRight: "Droite",
   blocks: {
     grass: "Herbe",
     dirt: "Terre",
@@ -367,7 +353,7 @@ export const it: Strings = {
   helpTouch: [
     ["Trascina", "Guardarsi intorno"],
     ["Tocca", "Rompere o posare, come dice il pulsante del martello"],
-    ["Frecce", "Camminare"],
+    ["Levetta", "Camminare, più piano vicino al centro"],
   ],
   helpTogether: "In una chat, il tuo contatto costruisce nello stesso mondo. Ognuno lo conserva per questa chat, e i due si uniscono ogni volta che ci siete entrambi.",
   close: "Chiudi",
@@ -381,12 +367,9 @@ export const it: Strings = {
   walk: "Cammina",
   jump: "Salta",
   down: "Scendi",
+  stick: "Cammina: trascina la levetta",
   breakMode: "Rompi: tocca per posare",
   placeMode: "Posa: tocca per rompere",
-  moveForward: "Avanti",
-  moveBack: "Indietro",
-  moveLeft: "Sinistra",
-  moveRight: "Destra",
   blocks: {
     grass: "Erba",
     dirt: "Terra",
@@ -439,7 +422,7 @@ export const ja: Strings = {
   helpTouch: [
     ["ドラッグ", "見回す"],
     ["タップ", "ハンマーボタンの表示どおりに壊す／置く"],
-    ["矢印", "歩く"],
+    ["スティック", "歩く（中央に近いほどゆっくり）"],
   ],
   helpTogether: "チャットでは、連絡先が同じワールドで建てます。ワールドはこのチャットごとにそれぞれが保存し、二人がそろうたびに一つにまとまります。",
   close: "閉じる",
@@ -453,12 +436,9 @@ export const ja: Strings = {
   walk: "歩く",
   jump: "ジャンプ",
   down: "下へ",
+  stick: "歩く：スティックをドラッグ",
   breakMode: "壊すモード：タップで置くモードへ",
   placeMode: "置くモード：タップで壊すモードへ",
-  moveForward: "前へ",
-  moveBack: "後ろへ",
-  moveLeft: "左へ",
-  moveRight: "右へ",
   blocks: {
     grass: "草",
     dirt: "土",
@@ -511,7 +491,7 @@ export const zh: Strings = {
   helpTouch: [
     ["拖动", "环顾四周"],
     ["轻点", "按锤子按钮所示破坏或放置"],
-    ["箭头", "行走"],
+    ["摇杆", "行走，越靠近中心越慢"],
   ],
   helpTogether: "在聊天中，你的联系人会在同一个世界里建造。你们各自为这个聊天保存世界，每次你们都在时两份世界就会合并。",
   close: "关闭",
@@ -525,12 +505,9 @@ export const zh: Strings = {
   walk: "行走",
   jump: "跳跃",
   down: "下降",
+  stick: "行走：拖动摇杆",
   breakMode: "破坏中：轻点改为放置",
   placeMode: "放置中：轻点改为破坏",
-  moveForward: "前进",
-  moveBack: "后退",
-  moveLeft: "向左",
-  moveRight: "向右",
   blocks: {
     grass: "草",
     dirt: "泥土",
@@ -583,7 +560,7 @@ export const ar: Strings = {
   helpTouch: [
     ["السحب", "النظر حولك"],
     ["اللمس", "الكسر أو الوضع، كما يقول زر المطرقة"],
-    ["الأسهم", "المشي"],
+    ["عصا التحكم", "المشي، أبطأ قرب المنتصف"],
   ],
   helpTogether: "في المحادثة، تبني جهة اتصالك في العالم نفسه. يحتفظ كل منكما به لهذه المحادثة، وتندمج النسختان كلما كنتما فيه معًا.",
   close: "إغلاق",
@@ -597,12 +574,9 @@ export const ar: Strings = {
   walk: "مشي",
   jump: "قفز",
   down: "نزول",
+  stick: "المشي: اسحب عصا التحكم",
   breakMode: "الكسر: المس للوضع بدلًا منه",
   placeMode: "الوضع: المس للكسر بدلًا منه",
-  moveForward: "للأمام",
-  moveBack: "للخلف",
-  moveLeft: "لليسار",
-  moveRight: "لليمين",
   blocks: {
     grass: "عشب",
     dirt: "تراب",
