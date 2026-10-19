@@ -107,6 +107,7 @@ async function main(): Promise<void> {
   const language = stringsFor(context.locale ?? navigator.language);
   strings = language.strings;
   document.documentElement.lang = language.lang;
+  document.documentElement.dir = language.dir;
   document.title = strings.title;
 
   let selected = 0;
