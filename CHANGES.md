@@ -2,6 +2,11 @@
 
 Each version Boo Blocks publishes, newest first. The manifest's `releaseNotes` is the one line people see with an update.
 
+## Unreleased
+
+- Spanish, French, Italian, Japanese, Simplified Chinese and Arabic, picked from Ghostly's language (until now they
+  read in English). In Arabic the page reads right to left, the menu opening under its button.
+
 ## 1.0.1 (sequence 2)
 
 - The page's count of changed blocks (`data-edits`, read by the end-to-end tests) is kept current on a timer too, not

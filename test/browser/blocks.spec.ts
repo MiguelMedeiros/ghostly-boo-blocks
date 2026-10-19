@@ -166,3 +166,21 @@ test("fits a phone: touch buttons, a hotbar that scrolls within the screen, tap 
   await ana.page.screenshot({ path: test.info().outputPath("phone.png") });
   await ana.close();
 });
+
+test("reads in Arabic from right to left, the menu opening under its button", async ({ browser }) => {
+  const chat = new Chat(browser);
+  const ana = await chat.open("ana", { inChat: false, locale: "ar" });
+  test.skip(!(await drawing(ana)), "no WebGL 2 in this browser here");
+  expect(await ana.frame.evaluate(() => [document.documentElement.lang, document.documentElement.dir])).toEqual(["ar", "rtl"]);
+  await expect(ana.frame.getByRole("heading", { name: "طريقة اللعب" })).toBeVisible();
+  await ana.frame.getByRole("button", { name: "إغلاق" }).click();
+  await expect(ana.frame.locator(".status")).toHaveText("أنت وحدك هنا. افتح Boo Blocks في محادثة لتبني مع جهة اتصال.");
+  const menuButton = ana.frame.getByRole("button", { name: "القائمة" });
+  await menuButton.click();
+  const button = (await menuButton.boundingBox())!;
+  const menu = (await ana.frame.locator(".menu").boundingBox())!;
+  expect(button.x).toBeLessThan(450);
+  expect(menu.x).toBeLessThanOrEqual(button.x);
+  expect(menu.x + menu.width).toBeGreaterThanOrEqual(button.x + button.width);
+  await ana.close();
+});

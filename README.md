@@ -76,7 +76,7 @@ Before a release, check these and tick them, with the client versions, in the re
 | `src/core.ts` | The world, storage and session wired together (no drawing) |
 | `src/player.ts`, `src/raycast.ts` | Walking, jumping, swimming, flying; which block is pointed at |
 | `src/render/` | The renderer, the mesher, the drawn atlas, the matrices |
-| `src/ui.ts`, `src/style.css`, `src/strings.ts` | The page around the world, in English and Brazilian Portuguese |
+| `src/ui.ts`, `src/style.css`, `src/strings.ts` | The page around the world, in Ghostly's eight languages (Arabic right to left) |
 | `src/sound.ts` | Sounds synthesized with Web Audio |
 | `src/main.ts` | The page: input, the loop, the contact's ghost |
 | `src/vendor/miniApp.ts` | The broker's types and limits, copied from Ghostly (see its header) |
