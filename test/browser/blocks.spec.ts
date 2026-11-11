@@ -192,7 +192,9 @@ test("a dialog stands above the hotbar and the touch buttons, so its buttons tak
   await ana.close();
 
   test.skip(browserName !== "chromium", "touch emulation: Chromium");
-  const phone = await chat.open("bob", { viewport: { width: 640, height: 300 }, touch: true });
+  // A small phone upright: the ▲ button overlapped the top of the help's Close.
+  const phone = await chat.open("bob", { viewport: { width: 320, height: 568 }, touch: true });
+  expect(await hits(phone)).toEqual({ buttons: ["Close: itself"], slot: "dialog" });
   const buttons = await phone.frame.evaluate(() => {
     const sheet = [...document.querySelectorAll<HTMLElement>(".sheet")].find((s) => !s.hidden)!;
     return [...document.querySelectorAll(".touch button")].filter((b) => {
