@@ -14,6 +14,15 @@ describe("protocol", () => {
     expect(parseFrame({ t: "tick", w, extra: true })).toMatchObject({ t: "tick", edits: [] });
   });
 
+  it("reads a yaw of any number of whole turns as the same direction", () => {
+    const frame = parseFrame({ t: "tick", w, p: [1, 2, 3, -40 * 2 * Math.PI - 0.5, 0.25], e: encodePage([[70, stampOf(4, 1)]]) });
+    expect(frame).toMatchObject({ t: "tick", edits: [[70, stampOf(4, 1)]] });
+    const pose = (frame as { pose: number[] }).pose;
+    expect(pose.slice(0, 3)).toEqual([1, 2, 3]);
+    expect(pose[3]).toBeCloseTo(-0.5, 9);
+    expect(pose[4]).toBe(0.25);
+  });
+
   it("drops what a hostile or broken contact might send", () => {
     const bad: unknown[] = [
       null, 5, "hello", [], { t: "nope" },

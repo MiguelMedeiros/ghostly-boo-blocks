@@ -32,6 +32,20 @@ describe("building together", () => {
     expect(a.overLimit + b.overLimit).toBe(0);
   });
 
+  it("takes the edits of a contact who turned round many times, facing the same way", async () => {
+    const [a, b] = pairBrokers();
+    const ana = await side(a);
+    const bob = await side(b);
+    await waitFor(() => ana.session.state === "here" && bob.session.state === "here");
+    // 160 turns to the left, as Boo Blocks 1.0.1 sent it: the yaw added up and was never brought back.
+    ana.session.move([60.5, 41, 60.5, 160 * 2 * Math.PI + 1, 0]);
+    expect(ana.place(60, 40, 60, BRICK)).toBe(true);
+    await waitFor(() => bob.world.get(60, 40, 60) === BRICK, 2000, "Ana's brick at Bob's");
+    await waitFor(() => bob.session.contact?.pose !== undefined, 2000, "Ana's pose");
+    expect(bob.session.contact!.pose![3]).toBeCloseTo(1, 2);
+    expect(bob.session.counts.dropped).toBe(0);
+  });
+
   it("converges when both change the same block at the same moment", async () => {
     const [a, b] = pairBrokers();
     a.latency = b.latency = 30;

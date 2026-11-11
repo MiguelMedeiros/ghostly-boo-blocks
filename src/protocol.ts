@@ -18,6 +18,7 @@ import type { MiniAppJson } from "./vendor/miniApp.ts";
 import { decodePage, decodeSection, RECORDS_PER_FRAME } from "./codec.ts";
 import { SECTION_COUNT, type WorldId } from "./world.ts";
 import { SIZE_X, SIZE_Y, SIZE_Z } from "./terrain.ts";
+import { wrapAngle } from "./render/math.ts";
 
 export const PROTOCOL = 1;
 /** A name as shown over the contact's head: at most this many characters. */
@@ -76,8 +77,9 @@ function poseOf(v: unknown): Pose | null {
   const [x, y, z, yaw, pitch] = v as Pose;
   const margin = 4;
   if (x < -margin || z < -margin || x > SIZE_X + margin || z > SIZE_Z + margin || y < -margin || y > SIZE_Y + 32) return null;
-  if (Math.abs(yaw) > 1000 || Math.abs(pitch) > 2) return null;
-  return [x, y, z, yaw, pitch];
+  if (Math.abs(pitch) > 2) return null;
+  // Whole turns face the same way: Boo Blocks 1.0.1 and earlier sent the yaw as it added up, past any bound.
+  return [x, y, z, wrapAngle(yaw), pitch];
 }
 
 /** A frame from the contact, checked; null for anything malformed. */

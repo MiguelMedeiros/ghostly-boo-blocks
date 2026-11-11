@@ -11,7 +11,7 @@ import { Core } from "./core.ts";
 import { Player, EYE } from "./player.ts";
 import { raycast, type Hit } from "./raycast.ts";
 import { FOV, Renderer, type Ghost } from "./render/renderer.ts";
-import { project, rayThrough, type Vec3 } from "./render/math.ts";
+import { project, rayThrough, wrapAngle, type Vec3 } from "./render/math.ts";
 import { Sound } from "./sound.ts";
 import { stringsFor } from "./strings.ts";
 import type { Contact } from "./sync.ts";
@@ -153,7 +153,7 @@ async function main(): Promise<void> {
   if (Array.isArray(saved) && saved.length === 6 && saved.every((n) => typeof n === "number" && Number.isFinite(n))) {
     const [x, y, z, yaw, pitch, flying] = saved as number[];
     if (x >= 0 && z >= 0 && x <= SIZE_X && z <= SIZE_Z && y >= 0 && y <= SIZE_Y + 20) {
-      Object.assign(player, { x, y, z, yaw, pitch: Math.max(-1.55, Math.min(1.55, pitch)), flying: flying === 1 });
+      Object.assign(player, { x, y, z, yaw: wrapAngle(yaw), pitch: Math.max(-1.55, Math.min(1.55, pitch)), flying: flying === 1 });
     }
   } else {
     // The first time in this chat: how to play. Where the person stands is kept from now on, so it shows once.
@@ -241,7 +241,7 @@ async function main(): Promise<void> {
     if (!p.moved && Math.hypot(e.clientX - p.startX, e.clientY - p.startY) > 6) p.moved = true;
     if (p.moved && [...pointers.keys()][0] === e.pointerId) {
       const k = p.type === "mouse" ? LOOK : LOOK * 1.4;
-      player!.yaw -= dx * k;
+      player!.yaw = wrapAngle(player!.yaw - dx * k);
       player!.pitch = Math.max(-1.55, Math.min(1.55, player!.pitch - dy * k));
     }
   });
@@ -330,6 +330,7 @@ async function main(): Promise<void> {
     const down = (...codes: string[]) => codes.some((c) => keys.has(c));
     if (down("ArrowLeft")) p.yaw += TURN * dt;
     if (down("ArrowRight")) p.yaw -= TURN * dt;
+    p.yaw = wrapAngle(p.yaw);
     if (down("ArrowUp")) p.pitch = Math.min(1.55, p.pitch + TURN * 0.6 * dt);
     if (down("ArrowDown")) p.pitch = Math.max(-1.55, p.pitch - TURN * 0.6 * dt);
     const forward = (down("KeyW") || held.forward ? 1 : 0) - (down("KeyS") || held.back ? 1 : 0);
