@@ -65,6 +65,40 @@ test("draws the same ground as Node, in the runner's sandbox, with no CSP violat
   await ana.close();
 });
 
+test("its dialogs are named, and one the person opens takes the keyboard and gives it back to the world", async ({ browser }) => {
+  const chat = new Chat(browser);
+  const ana = await chat.open("ana", { inChat: false });
+  test.skip(!(await drawing(ana)), "no WebGL 2 in this browser here");
+  const view = ana.frame.locator("canvas.view");
+  // The first open's help: named by its heading, and it leaves the focus where it was.
+  const help = ana.frame.getByRole("dialog", { name: "How to play" });
+  await expect(help).toBeVisible();
+  await expect(help).toHaveAttribute("aria-modal", "true");
+  expect(await ana.frame.evaluate(() => document.activeElement?.closest("[role=dialog]") ?? null)).toBeNull();
+  await dismissHelp(ana);
+  await expect(view).toBeFocused();
+
+  // Opened with the ? button: Close has the keyboard, and Escape gives it back to the world.
+  await ana.frame.getByRole("button", { name: "How to play" }).click();
+  await expect(help.getByRole("button", { name: "Close" })).toBeFocused();
+  await ana.page.keyboard.press("Escape");
+  await expect(help).toBeHidden();
+  await expect(view).toBeFocused();
+
+  // New world, from the menu: named, described by its question, Cancel has the keyboard, and Enter on it goes back.
+  await ana.frame.getByRole("button", { name: "Menu" }).click();
+  await ana.frame.getByRole("button", { name: "New world" }).click();
+  const confirm = ana.frame.getByRole("dialog", { name: "New world" });
+  await expect(confirm).toBeVisible();
+  await expect(confirm).toHaveAttribute("aria-modal", "true");
+  await expect(confirm).toHaveAccessibleDescription("Start a new world? Everything built here goes, for your contact too.");
+  await expect(confirm.getByRole("button", { name: "Cancel" })).toBeFocused();
+  await ana.page.keyboard.press("Enter");
+  await expect(confirm).toBeHidden();
+  await expect(view).toBeFocused();
+  await ana.close();
+});
+
 test("breaks and places blocks with the mouse, and keeps them after a reload", async ({ browser }) => {
   const chat = new Chat(browser);
   const ana = await chat.open("ana", { inChat: false });
