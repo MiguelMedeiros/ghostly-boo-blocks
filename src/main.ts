@@ -10,7 +10,7 @@ import { AIR, BLOCKS, PALETTE, WATER } from "./blocks.ts";
 import { Core } from "./core.ts";
 import { Player, EYE } from "./player.ts";
 import { raycast, type Hit } from "./raycast.ts";
-import { FOV, Renderer, type Ghost } from "./render/renderer.ts";
+import { FOV, ghostInView, Renderer, type Ghost } from "./render/renderer.ts";
 import { project, rayThrough, type Vec3 } from "./render/math.ts";
 import { Sound } from "./sound.ts";
 import { stringsFor } from "./strings.ts";
@@ -361,8 +361,11 @@ async function main(): Promise<void> {
     }
     const underwater = world.get(Math.floor(eye[0]), Math.floor(eye[1]), Math.floor(eye[2])) === WATER;
     // Drawn only when something on screen changed: an idle world costs no GPU time (and no battery).
+    // A ghost out of view counts for nothing: its bob alone would redraw the world many times a second.
     const rect = canvas.getBoundingClientRect();
-    const scene = JSON.stringify([eye.map((v) => v.toFixed(3)), p.yaw.toFixed(4), p.pitch.toFixed(4), ghosts.map((g) => [g.at.map((v) => v.toFixed(2)), g.yaw.toFixed(2)]), pointed?.cell, underwater, rect.width, rect.height, devicePixelRatio]);
+    const viewProjection = ghosts.length ? renderer!.viewProjectionFor(eye, p.yaw, p.pitch) : null;
+    const seen = viewProjection ? ghosts.filter((g) => ghostInView(viewProjection, g)) : ghosts;
+    const scene = JSON.stringify([eye.map((v) => v.toFixed(3)), p.yaw.toFixed(4), p.pitch.toFixed(4), seen.map((g) => [g.at.map((v) => v.toFixed(2)), g.yaw.toFixed(2)]), pointed?.cell, underwater, rect.width, rect.height, devicePixelRatio]);
     if (rebuilt || scene !== lastScene) renderer!.draw(eye, p.yaw, p.pitch, ghosts, pointed ? pointed.cell : null, underwater);
     lastScene = scene;
     if (ghost) {

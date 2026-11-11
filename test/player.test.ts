@@ -4,7 +4,8 @@ import { Player } from "../src/player.ts";
 import { raycast } from "../src/raycast.ts";
 import { forward, project, multiply, perspective, view } from "../src/render/math.ts";
 import type { BlockSource } from "../src/render/mesher.ts";
-import { meshSection } from "../src/render/mesher.ts";
+import { FLOATS_PER_VERTEX, ghostMesh, meshSection } from "../src/render/mesher.ts";
+import { FOV, ghostInView } from "../src/render/renderer.ts";
 import { drawAtlas } from "../src/render/atlas.ts";
 import { World } from "../src/world.ts";
 
@@ -80,6 +81,28 @@ describe("pointing", () => {
     expect(x).toBeCloseTo(150, 3);
     expect(y).toBeCloseTo(100, 3);
     expect(project(vp, [0, 0, 5], 300, 200)).toBeNull();
+  });
+
+  it("sees a ghost ahead, at the edge and far off, and not one behind, beside or past the far plane", () => {
+    const vp = multiply(perspective(FOV, 1.5, 0.05, 160), view([0, 1.6, 0], 0, 0));
+    const at = (x: number, y: number, z: number) => ({ at: [x, y, z] as [number, number, number], yaw: 0.7, tint: [1, 1, 1] as [number, number, number] });
+    expect(ghostInView(vp, at(0, 0, -8))).toBe(true);
+    expect(ghostInView(vp, at(0, 0, -150))).toBe(true);
+    // Its middle just past the right edge: its side shows still.
+    const edge = Math.tan(FOV / 2) * 1.5 * 8;
+    expect(ghostInView(vp, at(edge + 0.5, 0.8, -8))).toBe(true);
+    expect(ghostInView(vp, at(0, 0, 8))).toBe(false);
+    expect(ghostInView(vp, at(edge + 2, 0.8, -8))).toBe(false);
+    expect(ghostInView(vp, at(0, 0, -170))).toBe(false);
+    // Under the feet of a camera looking up.
+    expect(ghostInView(multiply(perspective(FOV, 1.5, 0.05, 160), view([0, 1.6, 0], 0, 1.4)), at(0, -4, -1))).toBe(false);
+  });
+
+  it("the ghost's mesh fits in the ball ghostInView tests, at any yaw", () => {
+    const { vertices } = ghostMesh(0, 0);
+    for (let i = 0; i < vertices.length; i += FLOATS_PER_VERTEX) {
+      expect(Math.hypot(vertices[i], vertices[i + 1] - 0.8, vertices[i + 2])).toBeLessThanOrEqual(1);
+    }
   });
 });
 

@@ -10,7 +10,7 @@ import { SIZE_X, SIZE_Y, SIZE_Z } from "../terrain.ts";
 import { SECTION, SECTION_COUNT, SECTIONS_X, SECTIONS_Z } from "../world.ts";
 import { ATLAS_PX, drawAtlas } from "./atlas.ts";
 import { FLOATS_PER_VERTEX, ghostMesh, meshSection, type BlockSource } from "./mesher.ts";
-import { multiply, perspective, placeAt, view, type Mat4, type Vec3 } from "./math.ts";
+import { multiply, perspective, placeAt, sphereInView, view, type Mat4, type Vec3 } from "./math.ts";
 
 export const FOV = (70 * Math.PI) / 180;
 export const SKY: Vec3 = [0.62, 0.8, 0.96];
@@ -75,6 +75,11 @@ export interface Ghost {
   at: Vec3;
   yaw: number;
   tint: Vec3;
+}
+
+/** Whether a camera may see any of a ghost: its mesh (ghostMesh) fits, at any yaw, in a ball of 1 round 0.8 over its feet. */
+export function ghostInView(viewProjection: Mat4, ghost: Ghost): boolean {
+  return sphereInView(viewProjection, [ghost.at[0], ghost.at[1] + 0.8, ghost.at[2]], 1);
 }
 
 function compile(gl: WebGL2RenderingContext, vertex: string, fragment: string): WebGLProgram {
@@ -223,6 +228,11 @@ export class Renderer {
     }
   }
 
+  /** The view-projection a camera at `eye` draws with, at the canvas's size. */
+  viewProjectionFor(eye: Vec3, yaw: number, pitch: number): Mat4 {
+    return multiply(perspective(FOV, this.canvas.width / this.canvas.height, 0.05, FAR), view(eye, yaw, pitch));
+  }
+
   draw(eye: Vec3, yaw: number, pitch: number, ghosts: Ghost[], pointed: Vec3 | null, underwater: boolean): void {
     const gl = this.gl;
     this.resize();
@@ -232,8 +242,7 @@ export class Renderer {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.DEPTH_TEST);
     gl.disable(gl.CULL_FACE);
-    const projection = perspective(FOV, this.canvas.width / this.canvas.height, 0.05, FAR);
-    this.viewProjection = multiply(projection, view(eye, yaw, pitch));
+    this.viewProjection = this.viewProjectionFor(eye, yaw, pitch);
     const u = this.uniforms;
     gl.useProgram(this.program);
     gl.uniformMatrix4fv(u.uViewProjection, false, this.viewProjection);
