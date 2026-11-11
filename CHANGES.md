@@ -7,6 +7,9 @@ Each version Boo Blocks publishes, newest first. The manifest's `releaseNotes` i
 - A block picked from the hotbar with the mouse or a finger gives the keys back to the world. Before, the slot kept
   the focus and took Space and Enter for itself, so holding Space neither jumped nor flew up until the person clicked
   the world again. A slot picked by keyboard keeps the focus, as before.
+- How to play and New world stand above the top bar, the hotbar and the touch buttons. In a short window (a phone on
+  its side, a small window on a computer) the hotbar covered the help's Close button, so a click there picked a block
+  instead, and the touch buttons still moved the person behind an open dialog.
 
 ## 1.0.1 (sequence 2)
 
