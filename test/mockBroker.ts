@@ -178,7 +178,26 @@ export class MockBroker implements MiniAppApi {
 
   emitPeer(event: MiniAppPeerEvent): void {
     if (!this.isOpen) return;
+    if (this.heldPeer) {
+      this.heldPeer.push(event);
+      return;
+    }
     for (const listener of [...this.peerListeners]) listener(event);
+  }
+
+  /** Peer events held back by holdPeer(), until releasePeer(). */
+  private heldPeer: MiniAppPeerEvent[] | null = null;
+
+  /** Holds back the peer events to this side, as when the contact's hello outruns the event that says they opened. */
+  holdPeer(): void {
+    this.heldPeer ??= [];
+  }
+
+  /** Lets the held peer events through, in order. */
+  releasePeer(): void {
+    const held = this.heldPeer ?? [];
+    this.heldPeer = null;
+    for (const event of held) this.emitPeer(event);
   }
 
   /** Waits until every frame on its way to this side has arrived. */

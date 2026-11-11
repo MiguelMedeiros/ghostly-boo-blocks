@@ -9,6 +9,8 @@ Each version Boo Blocks publishes, newest first. The manifest's `releaseNotes` i
   belong to, and the next open finishes deleting them. A delete that fails no longer stops the contact being told of
   the new world; it is tried again later. The stored `world` gets an `o` field while the deletes are pending (1.0.1
   ignores it).
+- An edit made in the moment between the contact's hello and the event that says they opened (under a tenth of a
+  second) now reaches them; before, it stayed on this side until the next time both opened Boo Blocks.
 
 ## 1.0.1 (sequence 2)
 
