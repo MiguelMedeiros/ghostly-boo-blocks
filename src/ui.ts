@@ -44,6 +44,7 @@ export class Ui {
   private readonly help: HTMLElement;
   private readonly menu: HTMLElement;
   private readonly confirm: HTMLElement;
+  private readonly closeHelp: HTMLButtonElement;
   private readonly flyButton: HTMLButtonElement;
   private readonly modeButton: HTMLButtonElement;
   readonly nameTag: HTMLElement;
@@ -75,7 +76,7 @@ export class Ui {
     const helpButton = el("button", "round", "?");
     helpButton.setAttribute("aria-label", s.help);
     helpButton.title = s.help;
-    helpButton.addEventListener("click", () => this.showHelp(true));
+    helpButton.addEventListener("click", () => this.showHelp(true, true));
     const menuButton = el("button", "round", "⋯");
     menuButton.setAttribute("aria-label", s.menu);
     menuButton.title = s.menu;
@@ -95,36 +96,48 @@ export class Ui {
     newWorld.addEventListener("click", () => {
       this.menu.hidden = true;
       this.confirm.hidden = false;
+      no.focus();
     });
     this.menu.append(sound, newWorld);
     host.append(this.menu);
 
+    // Both dialogs are named for a screen reader, and modal: the world behind them takes no keys while one is open.
     this.confirm = el("div", "sheet");
     this.confirm.hidden = true;
     this.confirm.setAttribute("role", "dialog");
+    this.confirm.setAttribute("aria-modal", "true");
+    this.confirm.setAttribute("aria-label", s.newWorld);
     const confirmBox = el("div", "card");
     const yes = el("button", "danger", s.newWorldYes);
     yes.addEventListener("click", () => {
-      this.confirm.hidden = true;
+      this.closeConfirm();
       actions.newWorld();
     });
     const no = el("button", "plain", s.cancel);
-    no.addEventListener("click", () => (this.confirm.hidden = true));
+    no.addEventListener("click", () => this.closeConfirm());
     const row = el("div", "row");
     row.append(no, yes);
-    confirmBox.append(el("p", "", s.newWorldConfirm), row);
+    const question = el("p", "", s.newWorldConfirm);
+    question.id = "new-world-question";
+    this.confirm.setAttribute("aria-describedby", question.id);
+    confirmBox.append(question, row);
     this.confirm.append(confirmBox);
     host.append(this.confirm);
 
     this.help = el("div", "sheet");
     this.help.hidden = true;
     this.help.setAttribute("role", "dialog");
+    this.help.setAttribute("aria-modal", "true");
     const helpBox = el("div", "card");
-    helpBox.append(el("h2", "", s.helpTitle));
+    const helpTitle = el("h2", "", s.helpTitle);
+    helpTitle.id = "help-title";
+    this.help.setAttribute("aria-labelledby", helpTitle.id);
+    helpBox.append(helpTitle);
     const coarse = matchMedia("(pointer: coarse)").matches;
     const table = el("dl", "keys");
     for (const [key, what] of coarse ? s.helpTouch : s.helpKeys) table.append(el("dt", "", key), el("dd", "", what));
     const closeHelp = el("button", "plain", s.close);
+    this.closeHelp = closeHelp;
     closeHelp.addEventListener("click", () => this.showHelp(false));
     helpBox.append(table, el("p", "note", s.helpTogether), closeHelp);
     this.help.append(helpBox);
@@ -211,9 +224,20 @@ export class Ui {
     this.modeButton.classList.toggle("on", placing);
   }
 
-  showHelp(shown: boolean): void {
+  /**
+   * Shows or hides the help. Opened by the person (`takeFocus`), Close takes the keyboard; on a first open it does
+   * not, so the page never takes the focus from the chat around it. Closed, the world has the keyboard again.
+   */
+  showHelp(shown: boolean, takeFocus = false): void {
     this.help.hidden = !shown;
+    if (shown && takeFocus) this.closeHelp.focus();
     if (!shown) this.canvas.focus();
+  }
+
+  private closeConfirm(): void {
+    if (this.confirm.hidden) return;
+    this.confirm.hidden = true;
+    this.canvas.focus();
   }
 
   /** Puts the contact's name tag at a point of the screen, or hides it. */
@@ -240,7 +264,7 @@ export class Ui {
 
   closeMenus(): void {
     this.menu.hidden = true;
-    this.confirm.hidden = true;
+    this.closeConfirm();
     this.showHelp(false);
   }
 }
