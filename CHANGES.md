@@ -2,6 +2,12 @@
 
 Each version Boo Blocks publishes, newest first. The manifest's `releaseNotes` is the one line people see with an update.
 
+## Unreleased
+
+- How to play and New world stand above the top bar, the hotbar and the touch buttons. In a short window (a phone on
+  its side, a small window on a computer) the hotbar covered the help's Close button, so a click there picked a block
+  instead, and the touch buttons still moved the person behind an open dialog.
+
 ## 1.0.1 (sequence 2)
 
 - The page's count of changed blocks (`data-edits`, read by the end-to-end tests) is kept current on a timer too, not
