@@ -133,9 +133,11 @@ export class Session {
   private peerEvent(event: MiniAppPeerEvent): void {
     if (event.open) {
       this.contact = { version: event.version, ...(this.contact?.name ? { name: this.contact.name } : {}) };
+      // Already here when the contact's hello came before this event (receive): the edits made since are kept for the
+      // next tick. The contact has said its hello and does not answer the one below, so no section would carry them.
+      if (this.state !== "here") this.outbox = [];
       this.state = "here";
       this.helloSent = false;
-      this.outbox = [];
       this.events.onPeer(this.state, this.contact);
       void this.sayHello();
     } else {

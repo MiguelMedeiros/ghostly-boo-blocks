@@ -37,6 +37,10 @@ export class MockBroker implements MiniAppApi {
   noRoom: (value: MiniAppJson) => boolean = () => false;
   /** Return true to lose a frame on its way (as when the session drops). */
   drop: (value: MiniAppJson) => boolean = () => false;
+  /** Return true to never answer a storage write and not apply it: the page went (a reload) before it was made. */
+  hang: (op: "set" | "delete", key: string) => boolean = () => false;
+  /** Return an error code to refuse a storage write with it (a broker or disk failure). */
+  fail: (op: "set" | "delete", key: string) => string | null = () => null;
   displayName: string | undefined;
   /** The storage scope's room (5 MiB unless a test makes it smaller). */
   storageBytes: number = MINI_APP_LIMITS.storageScopeBytes;
@@ -92,6 +96,9 @@ export class MockBroker implements MiniAppApi {
     set: async (key: string, value: MiniAppJson): Promise<void> => {
       const busy = this.count();
       if (busy) return refuse(busy);
+      if (this.hang("set", key)) return new Promise<void>(() => {});
+      const failure = this.fail("set", key);
+      if (failure) return refuse(failure);
       if (!key || bytes(key) > MINI_APP_LIMITS.storageKeyBytes) return refuse("bad-key");
       if (!strictJson(value)) return refuse("bad-request");
       const text = JSON.stringify(value);
@@ -103,6 +110,9 @@ export class MockBroker implements MiniAppApi {
     delete: async (key: string): Promise<void> => {
       const busy = this.count();
       if (busy) return refuse(busy);
+      if (this.hang("delete", key)) return new Promise<void>(() => {});
+      const failure = this.fail("delete", key);
+      if (failure) return refuse(failure);
       this.stored.delete(key);
     },
     keys: async (): Promise<string[]> => {
@@ -168,7 +178,26 @@ export class MockBroker implements MiniAppApi {
 
   emitPeer(event: MiniAppPeerEvent): void {
     if (!this.isOpen) return;
+    if (this.heldPeer) {
+      this.heldPeer.push(event);
+      return;
+    }
     for (const listener of [...this.peerListeners]) listener(event);
+  }
+
+  /** Peer events held back by holdPeer(), until releasePeer(). */
+  private heldPeer: MiniAppPeerEvent[] | null = null;
+
+  /** Holds back the peer events to this side, as when the contact's hello outruns the event that says they opened. */
+  holdPeer(): void {
+    this.heldPeer ??= [];
+  }
+
+  /** Lets the held peer events through, in order. */
+  releasePeer(): void {
+    const held = this.heldPeer ?? [];
+    this.heldPeer = null;
+    for (const event of held) this.emitPeer(event);
   }
 
   /** Waits until every frame on its way to this side has arrived. */
