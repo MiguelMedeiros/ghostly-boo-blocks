@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { BRICK, GLASS, PLANKS, STONE } from "../src/blocks.ts";
-import type { Core } from "../src/core.ts";
+import { Core } from "../src/core.ts";
+import { Limiter } from "../src/limiter.ts";
+import { META_KEY, WorldStore } from "../src/store.ts";
+import { stampOf, World } from "../src/world.ts";
 import { cellIndex } from "../src/terrain.ts";
 import { MockBroker, pairBrokers } from "./mockBroker.ts";
 import { closeSide, converged, openSide, waitFor } from "./helpers.ts";
@@ -164,5 +167,62 @@ describe("building together", () => {
     bob = await side(b);
     await waitFor(() => bob.world.get(30, 50, 30) === BRICK, 2000);
     expect(cellIndex(30, 50, 30)).toBeGreaterThan(0);
+  });
+});
+
+describe("New world, when storage is cut short", () => {
+  /** Bob's storage holds a world of 12 000 edits in three pages. */
+  async function bobsOldWorld(b: MockBroker): Promise<void> {
+    const world = new World();
+    const store = new WorldStore(b, new Limiter(), world);
+    world.onEdit = (cell) => store.track(cell);
+    await store.load();
+    for (let i = 0; i < 12_000; i++) world.apply(i, stampOf(i + 1, BRICK));
+    await store.flush();
+  }
+
+  it("a reload while taking the contact's new world finds it without the old edits", async () => {
+    const [a, b] = pairBrokers();
+    await bobsOldWorld(b);
+    a.stored.set(META_KEY, JSON.stringify({ v: 1, w: [1, 4242, 1] }));
+    let writes = 0;
+    // Bob's page goes right after his first write for the new world.
+    b.hang = () => ++writes > 1;
+    await side(a);
+    b.launch();
+    const bob = new Core(b, {}, { tickMs: 20, flushMs: 50 });
+    await bob.open();
+    expect(bob.world.edits.size).toBe(12_000);
+    await waitFor(() => writes > 1, 5000, "Bob to start taking the new world");
+    void bob.close();
+    b.shutdown();
+    const next = new MockBroker("bob");
+    for (const [key, value] of b.stored) next.stored.set(key, value);
+    const world = new World();
+    const again = new WorldStore(next, new Limiter(), world);
+    expect(await again.load()).toBe("loaded");
+    expect(world.id).toEqual({ generator: 1, seed: 4242, epoch: 1 });
+    expect(world.edits.size).toBe(0);
+    expect([...next.stored.keys()]).toEqual([META_KEY]);
+  }, 20_000);
+
+  it("New world still tells the contact when deleting an old page fails", async () => {
+    const [a, b] = pairBrokers();
+    const ana = await side(a);
+    const bob = await side(b);
+    for (let i = 0; i < 5; i++) ana.place(10 + i, 50, 10, PLANKS);
+    await waitFor(() => converged(ana, bob) && a.stored.has("p0"), 2000, "Ana's edits stored and with Bob");
+    a.fail = (op) => (op === "delete" ? "failed" : null);
+    await ana.newWorld(4242);
+    expect(ana.store.failed).toBe(true);
+    await waitFor(() => bob.world.id.seed === 4242, 3000, "Bob to take the new world");
+    expect(bob.world.edits.size).toBe(0);
+    a.fail = () => null;
+    ana.place(10, 55, 10, GLASS);
+    await waitFor(() => bob.world.get(10, 55, 10) === GLASS, 2000);
+    await closeSide(a, ana);
+    const again = await side(a);
+    expect(again.world.id.seed).toBe(4242);
+    expect(again.world.edits.size).toBe(1);
   });
 });
