@@ -6,7 +6,7 @@ import type { MiniAppApi, MiniAppContext } from "./vendor/miniApp.ts";
 import { Limiter, realClock, type Clock } from "./limiter.ts";
 import { cleanName } from "./protocol.ts";
 import { WorldStore } from "./store.ts";
-import { Session, TICK_MS, type Contact, type PeerState } from "./sync.ts";
+import { RETRY_MS, Session, TICK_MS, type Contact, type PeerState } from "./sync.ts";
 import { GENERATOR } from "./terrain.ts";
 import { World, type WorldId } from "./world.ts";
 
@@ -27,6 +27,7 @@ export interface CoreOptions {
   clock?: Clock;
   tickMs?: number;
   flushMs?: number;
+  retryMs?: number;
 }
 
 export class Core {
@@ -72,7 +73,7 @@ export class Core {
     this.world.onChange = (cell, block) => this.hooks.onBlock?.(cell, block);
     this.hooks.onWorld?.(this.world.id);
     if (this.newer) return;
-    this.session.start({ version: context.version, ...(this.name ? { name: this.name } : {}), inChat: context.inChat }, context.peer, this.options.tickMs ?? TICK_MS);
+    this.session.start({ version: context.version, ...(this.name ? { name: this.name } : {}), inChat: context.inChat }, context.peer, this.options.tickMs ?? TICK_MS, this.options.retryMs ?? RETRY_MS);
     this.flushTimer = setInterval(() => void this.store.flush(), this.options.flushMs ?? FLUSH_MS);
   }
 
