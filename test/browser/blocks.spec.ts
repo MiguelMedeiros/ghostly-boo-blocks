@@ -166,3 +166,42 @@ test("fits a phone: touch buttons, a hotbar that scrolls within the screen, tap 
   await ana.page.screenshot({ path: test.info().outputPath("phone.png") });
   await ana.close();
 });
+
+test("a dialog stands above the hotbar and the touch buttons, so its buttons take a click in a short window", async ({ browser, browserName }) => {
+  /** What a click at the middle of each button of the open dialog lands on, and what a hotbar slot gets. */
+  const hits = (side: Side) =>
+    side.frame.evaluate(() => {
+      const sheet = [...document.querySelectorAll<HTMLElement>(".sheet")].find((s) => !s.hidden)!;
+      const at = (node: Element) => {
+        node.scrollIntoView({ block: "nearest" }); // the card scrolls when the window is shorter than it
+        const r = node.getBoundingClientRect();
+        return document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+      };
+      const buttons = [...sheet.querySelectorAll("button")].map((b) => `${b.textContent}: ${at(b) === b ? "itself" : at(b)?.className}`);
+      return { buttons, slot: sheet.contains(at(document.querySelector(".hotbar .slot")!)) ? "dialog" : "slot" };
+    });
+  const chat = new Chat(browser);
+  // A short window: a phone on its side, or the app in a small window on a computer.
+  const ana = await chat.open("ana", { viewport: { width: 480, height: 360 } });
+  await expect(ana.frame.getByRole("button", { name: "Close" })).toBeVisible();
+  expect(await hits(ana)).toEqual({ buttons: ["Close: itself"], slot: "dialog" });
+  await ana.frame.getByRole("button", { name: "Close" }).click();
+  await ana.frame.getByRole("button", { name: "Menu" }).click();
+  await ana.frame.getByRole("button", { name: "New world", exact: true }).click();
+  expect(await hits(ana)).toEqual({ buttons: ["Cancel: itself", "Start a new world: itself"], slot: "dialog" });
+  await ana.close();
+
+  test.skip(browserName !== "chromium", "touch emulation: Chromium");
+  // A small phone upright: the ▲ button overlapped the top of the help's Close.
+  const phone = await chat.open("bob", { viewport: { width: 320, height: 568 }, touch: true });
+  expect(await hits(phone)).toEqual({ buttons: ["Close: itself"], slot: "dialog" });
+  const buttons = await phone.frame.evaluate(() => {
+    const sheet = [...document.querySelectorAll<HTMLElement>(".sheet")].find((s) => !s.hidden)!;
+    return [...document.querySelectorAll(".touch button")].filter((b) => {
+      const r = b.getBoundingClientRect();
+      return sheet.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)) === false;
+    }).length;
+  });
+  expect(buttons, "touch buttons above the open help").toBe(0);
+  await phone.close();
+});

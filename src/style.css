@@ -33,7 +33,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .menu { position: absolute; top: 50px; right: 8px; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 4px; display: flex; flex-direction: column; min-width: 170px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 .menu .item { text-align: left; background: none; border: 0; padding: 9px 12px; border-radius: 8px; }
 .menu .item:hover, .menu .item:focus-visible { background: var(--line); }
-.sheet { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(10, 8, 20, 0.35); padding: 16px; }
+/* A dialog stands above everything else (the top bar, the hotbar, the touch buttons come later in the page), so its
+   buttons take a click in a short window and the world's controls wait behind it. */
+.sheet { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; background: rgba(10, 8, 20, 0.35); padding: 16px; }
 .card { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; max-width: 420px; width: 100%; max-height: 100%; overflow: auto; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 .card h2 { margin: 0 0 10px; font-size: 18px; }
 .card p { margin: 0 0 14px; }
