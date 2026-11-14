@@ -126,7 +126,9 @@ export class Ui {
     for (const [key, what] of coarse ? s.helpTouch : s.helpKeys) table.append(el("dt", "", key), el("dd", "", what));
     const closeHelp = el("button", "plain", s.close);
     closeHelp.addEventListener("click", () => this.showHelp(false));
-    helpBox.append(table, el("p", "note", s.helpTogether), closeHelp);
+    helpBox.append(table);
+    if (!coarse) helpBox.append(el("p", "note", s.helpLayout));
+    helpBox.append(el("p", "note", s.helpTogether), closeHelp);
     this.help.append(helpBox);
     host.append(this.help);
 
