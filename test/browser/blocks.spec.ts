@@ -65,6 +65,35 @@ test("draws the same ground as Node, in the runner's sandbox, with no CSP violat
   await ana.close();
 });
 
+test("a block picked with the mouse leaves the keys to the world: Space still flies up", async ({ browser }) => {
+  const chat = new Chat(browser);
+  const ana = await chat.open("ana", { inChat: false });
+  test.skip(!(await drawing(ana)), "no WebGL 2 in this browser here");
+  await dismissHelp(ana);
+  const view = ana.frame.locator("canvas.view");
+  // Where the person stands, as the app keeps it (on a first open at once, then every 5 s).
+  const height = () => (JSON.parse(ana.storage.get("me") ?? "null") as number[] | null)?.[1] ?? NaN;
+  await expect.poll(height).not.toBeNaN();
+  const start = height();
+  const stone = ana.frame.getByRole("button", { name: "Stone", exact: true });
+  await stone.click();
+  await expect(stone).toHaveClass(/\bselected\b/);
+  await expect(view).toBeFocused();
+  // Fly, then hold Space to go up: the slot clicked last must not take the key for itself.
+  await ana.page.keyboard.press("KeyF");
+  await ana.page.keyboard.down("Space");
+  await ana.page.waitForTimeout(1000);
+  await ana.page.keyboard.up("Space");
+  await expect.poll(height, { timeout: 8000 }).toBeGreaterThan(start + 3);
+  // Picked by keyboard, the slot keeps the focus, so Tab goes on from there.
+  const dirt = ana.frame.getByRole("button", { name: "Dirt", exact: true });
+  await dirt.focus();
+  await ana.page.keyboard.press("Space");
+  await expect(dirt).toHaveClass(/\bselected\b/);
+  await expect(dirt).toBeFocused();
+  await ana.close();
+});
+
 test("breaks and places blocks with the mouse, and keeps them after a reload", async ({ browser }) => {
   const chat = new Chat(browser);
   const ana = await chat.open("ana", { inChat: false });
