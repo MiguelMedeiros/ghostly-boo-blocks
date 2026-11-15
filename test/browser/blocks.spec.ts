@@ -141,13 +141,14 @@ test("two people build in one world, see each other's name, and find it again af
 
   // Ana walks ahead of Bob: he sees her ghost and her name over it.
   await anaView.focus();
-  // Both start facing the same way, a few blocks apart: two seconds ahead (jumping any step) puts her in his view.
+  // Both start facing the same way, each up to 3 blocks from the middle at random, so she may start 6 behind him; and a
+  // slow page (a few frames a second without a GPU) walks less than its time. She walks (jumping any step) until he
+  // sees her, rather than for a fixed time.
   await ana.page.keyboard.down("KeyW");
   await ana.page.keyboard.down("Space");
-  await ana.page.waitForTimeout(2000);
+  await expect(bob.frame.locator(".name-tag")).toBeVisible({ timeout: 30_000 });
   await ana.page.keyboard.up("Space");
   await ana.page.keyboard.up("KeyW");
-  await expect(bob.frame.locator(".name-tag")).toBeVisible();
   await expect(bob.frame.locator(".name-tag")).toHaveText("Ana");
   await bob.page.screenshot({ path: test.info().outputPath("bob-sees-ana.png") });
 
