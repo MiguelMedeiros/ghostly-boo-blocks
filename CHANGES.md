@@ -7,6 +7,11 @@ Each version Boo Blocks publishes, newest first. The manifest's `releaseNotes` i
 - A block picked from the hotbar with the mouse or a finger gives the keys back to the world. Before, the slot kept
   the focus and took Space and Enter for itself, so holding Space neither jumped nor flew up until the person clicked
   the world again. A slot picked by keyboard keeps the focus, as before.
+- The wheel picks blocks a notch at a time on a trackpad too. Before, every wheel event moved one slot, so a short
+  two-finger swipe went round the whole hotbar; now a slot goes by per 50 px of scroll, at most one per event, and
+  the first event after a pause moves one slot at once, so a small Mac mouse notch still answers. A sideways scroll
+  (Shift + wheel on macOS and in Chrome, while flying down) picks the next block, not the previous one, and an event
+  with no movement picks nothing.
 
 ## 1.0.1 (sequence 2)
 
