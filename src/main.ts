@@ -17,6 +17,7 @@ import { stringsFor } from "./strings.ts";
 import type { Contact } from "./sync.ts";
 import { inWorld, SIZE_X, SIZE_Y, SIZE_Z, spawnPoint } from "./terrain.ts";
 import { Ui } from "./ui.ts";
+import { createWheelStepper } from "./wheel.ts";
 import "./style.css";
 
 /** Where the person stood, kept per chat so they come back to it. */
@@ -257,9 +258,12 @@ async function main(): Promise<void> {
   canvas.addEventListener("pointerleave", (e) => {
     if (e.pointerType === "mouse") aim = null;
   });
+  // A slot per notch, a few per trackpad swipe, and Shift + wheel (sideways) the same way as without: see wheel.ts.
+  const wheelSteps = createWheelStepper({ now: () => performance.now(), pageHeight: () => canvas.clientHeight });
   canvas.addEventListener("wheel", (e) => {
     e.preventDefault();
-    choose(selected + (e.deltaY > 0 ? 1 : -1));
+    const steps = wheelSteps(e);
+    if (steps !== 0) choose(selected + steps);
   }, { passive: false });
 
   const keys = new Set<string>();
