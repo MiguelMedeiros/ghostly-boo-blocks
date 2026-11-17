@@ -7,6 +7,9 @@ Each version Boo Blocks publishes, newest first. The manifest's `releaseNotes` i
 - A block picked from the hotbar with the mouse or a finger gives the keys back to the world. Before, the slot kept
   the focus and took Space and Enter for itself, so holding Space neither jumped nor flew up until the person clicked
   the world again. A slot picked by keyboard keeps the focus, as before.
+- A screen reader hears which block is picked in the hotbar (pressed), whether the ⋯ menu is open (expanded) and
+  whether sound is on. Before, the picked slot and the sound switch showed it only by colour and by ✓ or ✗, which
+  read out as "check mark" and "multiplication x".
 
 ## 1.0.1 (sequence 2)
 
