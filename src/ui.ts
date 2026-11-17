@@ -22,6 +22,9 @@ function swatch(block: number): HTMLCanvasElement {
   return canvas;
 }
 
+/** The least time between two hints (Q or E doing nothing). */
+export const HINT_GAP_MS = 1500;
+
 export interface UiActions {
   select(index: number): void;
   newWorld(): void;
@@ -48,6 +51,8 @@ export class Ui {
   private readonly modeButton: HTMLButtonElement;
   readonly nameTag: HTMLElement;
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
+  private toastIsHint = false;
+  private hintAt = -Infinity;
   private nameTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
@@ -59,7 +64,11 @@ export class Ui {
     host.classList.add("blocks");
     this.canvas = el("canvas", "view");
     this.canvas.tabIndex = 0;
-    this.canvas.setAttribute("aria-label", s.title);
+    // An application: a screen reader passes W A S D, Q, E, the arrows and Space to the game instead of taking them
+    // for its own reading keys. The name says which keys do what, since the world itself says nothing.
+    this.canvas.setAttribute("role", "application");
+    this.canvas.setAttribute("aria-roledescription", s.worldRole);
+    this.canvas.setAttribute("aria-label", s.worldLabel);
     host.append(this.canvas);
     host.append(el("div", "crosshair"));
     this.labels = el("div", "labels");
@@ -132,8 +141,9 @@ export class Ui {
     this.help.append(helpBox);
     host.append(this.help);
 
+    // Always in the page, and empty (so unseen) between notices: a live region that appears together with its text
+    // is often not read out, so a notice must only ever change the text of a region already there.
     this.toast = el("div", "toast");
-    this.toast.hidden = true;
     this.toast.setAttribute("role", "status");
     host.append(this.toast);
 
@@ -192,10 +202,25 @@ export class Ui {
   }
 
   notice(text: string, ms = 4000): void {
+    this.show(text, ms, false);
+  }
+
+  /**
+   * A short line for a key that did nothing (Q or E with nothing in reach). At most one every HINT_GAP_MS, so tapping
+   * the key does not fill the screen reader's queue, and never over a notice still showing.
+   */
+  hint(text: string): void {
+    const now = Date.now();
+    if (now - this.hintAt < HINT_GAP_MS || (this.toast.textContent && !this.toastIsHint)) return;
+    this.hintAt = now;
+    this.show(text, 2000, true);
+  }
+
+  private show(text: string, ms: number, hint: boolean): void {
     this.toast.textContent = text;
-    this.toast.hidden = false;
+    this.toastIsHint = hint;
     if (this.toastTimer) clearTimeout(this.toastTimer);
-    this.toastTimer = setTimeout(() => (this.toast.hidden = true), ms);
+    this.toastTimer = setTimeout(() => (this.toast.textContent = ""), ms);
   }
 
   select(index: number, name: string): void {
