@@ -80,6 +80,36 @@ describe("storage", () => {
     expect(b.world.edits.size).toBe(0);
   });
 
+  it("forgets a page write of the old world that fails after the world starts again", async () => {
+    const broker = new MockBroker("ana", "0.1.0", false);
+    const a = fresh(broker);
+    await a.store.load();
+    for (let i = 0; i < RECORDS_PER_PAGE + 5; i++) a.world.apply(i, stampOf(i + 1, BRICK));
+    await a.store.flush();
+    // An edit in p1 whose write is still out when New world starts, and then is refused: storage full.
+    a.world.apply(RECORDS_PER_PAGE + 1, stampOf(RECORDS_PER_PAGE + 100, GLASS));
+    const set = broker.storage.set;
+    let refuse = () => {};
+    broker.storage.set = (key, value) => (key === "p1" ? new Promise((_, reject) => (refuse = () => reject(new Error("full")))) : set(key, value));
+    const flushing = a.store.flush();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const id = { generator: 1, seed: 99, epoch: 1 };
+    a.world.reset(id);
+    const resetting = a.store.reset(id);
+    refuse();
+    await flushing;
+    await resetting;
+    broker.storage.set = set;
+    // The old world's page is not the new one's: nothing to write again, and its storage is not full.
+    expect(a.store.storageFull).toBe(false);
+    expect(a.store.pending).toBe(false);
+    a.world.edit(10, 50, 10, BRICK);
+    await a.store.flush();
+    const b = fresh(broker);
+    await b.store.load();
+    expect(b.world.get(10, 50, 10)).toBe(BRICK);
+  });
+
   it("leaves a world made by a later generator alone", async () => {
     const broker = new MockBroker("ana", "0.1.0", false);
     broker.stored.set(META_KEY, JSON.stringify({ v: 2, w: [7, 1, 1] }));

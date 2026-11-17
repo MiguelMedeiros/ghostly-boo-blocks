@@ -4,6 +4,9 @@ Each version Boo Blocks publishes, newest first. The manifest's `releaseNotes` i
 
 ## Unreleased
 
+- A save of the old world's blocks refused (storage full or failed) just as New world starts, or as the contact's
+  newer world arrives, no longer spoils the new world's next save. Before, it threw, the new world's first blocks were
+  not saved until another edit came to their page, and "Storage full" could show for a world that is not full.
 - A block picked from the hotbar with the mouse or a finger gives the keys back to the world. Before, the slot kept
   the focus and took Space and Enter for itself, so holding Space neither jumped nor flew up until the person clicked
   the world again. A slot picked by keyboard keeps the focus, as before.
