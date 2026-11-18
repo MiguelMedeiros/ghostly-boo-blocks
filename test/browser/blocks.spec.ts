@@ -11,6 +11,30 @@ async function edits(side: Side): Promise<number> {
   return Number(await appData(side, "edits"));
 }
 
+/**
+ * Holds a key for `ms` of the game's time. The game counts a frame as 100 ms at most (src/main.ts), so on a loaded
+ * machine without a GPU, drawing a few frames a second, its time runs slower than the clock: held for the clock's
+ * time, a turn or a walk would come out a fraction as long.
+ */
+async function hold(side: Side, key: string, ms: number): Promise<void> {
+  await side.page.keyboard.down(key);
+  await side.frame.evaluate(
+    (left) =>
+      new Promise<void>((resolve) => {
+        let last = performance.now();
+        const step = (now: number) => {
+          left -= Math.min(100, now - last);
+          last = now;
+          if (left <= 0) resolve();
+          else requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      }),
+    ms,
+  );
+  await side.page.keyboard.up(key);
+}
+
 /** Spots on the world, as fractions of its size, low enough to point at the ground in front, above the hotbar. */
 const SPOTS: [number, number][] = [[0.5, 0.8], [0.5, 0.72], [0.42, 0.78], [0.58, 0.78], [0.5, 0.66], [0.35, 0.8], [0.65, 0.8], [0.5, 0.6], [0.3, 0.7], [0.7, 0.7]];
 
@@ -36,12 +60,8 @@ async function build(side: Side, action: "left" | "right" | "tap"): Promise<void
     }
     // Facing the sea or a slope down: look further down and try again.
     await view.focus();
-    await side.page.keyboard.down("ArrowDown");
-    await side.page.waitForTimeout(250);
-    await side.page.keyboard.up("ArrowDown");
-    await side.page.keyboard.down("ArrowLeft");
-    await side.page.waitForTimeout(400);
-    await side.page.keyboard.up("ArrowLeft");
+    await hold(side, "ArrowDown", 250);
+    await hold(side, "ArrowLeft", 400);
   }
   throw new Error(`${side.name}: no block within reach`);
 }
@@ -81,9 +101,7 @@ test("a block picked with the mouse leaves the keys to the world: Space still fl
   await expect(view).toBeFocused();
   // Fly, then hold Space to go up: the slot clicked last must not take the key for itself.
   await ana.page.keyboard.press("KeyF");
-  await ana.page.keyboard.down("Space");
-  await ana.page.waitForTimeout(1000);
-  await ana.page.keyboard.up("Space");
+  await hold(ana, "Space", 1000);
   await expect.poll(height, { timeout: 8000 }).toBeGreaterThan(start + 3);
   // Picked by keyboard, the slot keeps the focus, so Tab goes on from there.
   const dirt = ana.frame.getByRole("button", { name: "Dirt", exact: true });
@@ -143,9 +161,7 @@ test("two people build in one world, see each other's name, and find it again af
   await anaView.focus();
   // Both start facing the same way, a few blocks apart: two seconds ahead (jumping any step) puts her in his view.
   await ana.page.keyboard.down("KeyW");
-  await ana.page.keyboard.down("Space");
-  await ana.page.waitForTimeout(2000);
-  await ana.page.keyboard.up("Space");
+  await hold(ana, "Space", 2000);
   await ana.page.keyboard.up("KeyW");
   await expect(bob.frame.locator(".name-tag")).toBeVisible();
   await expect(bob.frame.locator(".name-tag")).toHaveText("Ana");
