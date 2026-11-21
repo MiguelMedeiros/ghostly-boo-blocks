@@ -126,7 +126,9 @@ export class Ui {
     for (const [key, what] of coarse ? s.helpTouch : s.helpKeys) table.append(el("dt", "", key), el("dd", "", what));
     const closeHelp = el("button", "plain", s.close);
     closeHelp.addEventListener("click", () => this.showHelp(false));
-    helpBox.append(table, el("p", "note", s.helpTogether), closeHelp);
+    helpBox.append(table);
+    if (!coarse) helpBox.append(el("p", "note", s.helpLayout));
+    helpBox.append(el("p", "note", s.helpTogether), closeHelp);
     this.help.append(helpBox);
     host.append(this.help);
 
@@ -146,7 +148,12 @@ export class Ui {
       const name = BLOCKS[block] ? s.blocks[BLOCKS[block]!.key] : "";
       slot.setAttribute("aria-label", name);
       slot.title = name;
-      slot.addEventListener("click", () => actions.select(i));
+      slot.addEventListener("click", (e) => {
+        actions.select(i);
+        // Picked with a pointer (detail > 0), the world has the keyboard again: a slot left focused takes Space and
+        // Enter for itself, so the person could not jump or fly up. Picked by keyboard, the focus stays on the slot.
+        if (e.detail > 0) this.canvas.focus();
+      });
       this.slots.push(slot);
       this.hotbar.append(slot);
     });
