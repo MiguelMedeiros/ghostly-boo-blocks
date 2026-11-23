@@ -11,7 +11,8 @@ describe("terrain", () => {
     expect(cells.length).toBe(CELLS);
     // Pinned: if this changes, the generator changed, and GENERATOR must be raised with the old one kept.
     expect(createHash("sha256").update(cells).digest("base64url")).toMatchInlineSnapshot(`"WYCNp-p4FNqEJj8KQXow9vOH3YdHLUxtAX5w86s2-Ko"`);
-    expect(generate(DEFAULT_SEED)).toEqual(cells);
+    // Buffer.compare, not toEqual: a deep compare of a million cells takes seconds.
+    expect(Buffer.compare(generate(DEFAULT_SEED), cells)).toBe(0);
     // The page shows this as data-ground; test/browser checks Chromium and WebKit make the same.
     expect(new World().groundHash).toBe(fnv(cells));
     expect(fnv(cells).toString(16)).toBe(GROUND_HEX);
