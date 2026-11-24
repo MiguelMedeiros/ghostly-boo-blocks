@@ -160,6 +160,8 @@ export class WorldStore {
         await this.call(() => this.api.storage.set(key, value));
         if (key !== META_KEY) this.storageFull = false;
       } catch (error) {
+        // The world started again while this write was out: its page belongs to the old world, which is gone.
+        if (generation !== this.generation) return;
         if (key !== META_KEY) this.dirty.add(Number(key.slice(1)));
         if (miniAppErrorCode(error) === "full") this.storageFull = true;
         else this.failed = true;
