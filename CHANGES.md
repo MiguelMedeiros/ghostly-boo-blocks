@@ -7,9 +7,14 @@ Each version Boo Blocks publishes, newest first. The manifest's `releaseNotes` i
 - The menu (⋯) closed with the mouse gives the keys back to the world. Before, ⋯ kept the focus, so the next Space
   opened the menu again instead of jumping, and the world took no keys until the person clicked it. Closed by
   keyboard, ⋯ keeps the focus, as before.
+- A click with the mouse's wheel, or its back or forward button, breaks nothing. Before, every button but the right one
+  broke the block under the cursor, so pressing the wheel while picking a block with it took a block away.
 - A person in the sea climbs out onto the shore: swimming up against a block one above the water, with the head out,
   they come up as from a jump. Before, swimming topped out with the feet just under the water's top, so no shore could
   be reached and the only way out was to fly.
+- A save of the old world's blocks refused (storage full or failed) just as New world starts, or as the contact's
+  newer world arrives, no longer spoils the new world's next save. Before, it threw, the new world's first blocks were
+  not saved until another edit came to their page, and "Storage full" could show for a world that is not full.
 - A block picked from the hotbar with the mouse or a finger gives the keys back to the world. Before, the slot kept
   the focus and took Space and Enter for itself, so holding Space neither jumped nor flew up until the person clicked
   the world again. A slot picked by keyboard keeps the focus, as before.
