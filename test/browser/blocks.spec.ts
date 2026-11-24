@@ -294,12 +294,13 @@ test("redraws for the contact's ghost only while it is in view", async ({ browse
   await ana.page.waitForTimeout(1500);
   expect(await drawsOver(ana, draws, 2000)).toBeGreaterThanOrEqual(4);
 
-  // Ana turns round: Bob's ghost is behind her, and an idle world is not drawn at all.
+  // Ana turns round: Bob's ghost is behind her, and an idle world is not drawn at all. The game counts a frame as
+  // 0.1 s at most, so a slow page (a few frames a second without a GPU) turns less than its time: she turns until his
+  // name goes, rather than for a fixed time.
   await ana.frame.locator("canvas.view").focus();
   await ana.page.keyboard.down("ArrowLeft");
-  await ana.page.waitForTimeout(1400);
+  await expect(ana.frame.locator(".name-tag")).toBeHidden({ timeout: 30_000 });
   await ana.page.keyboard.up("ArrowLeft");
-  await expect(ana.frame.locator(".name-tag")).toBeHidden();
   await ana.page.waitForTimeout(1500);
   expect(await drawsOver(ana, draws, 2000)).toBeLessThanOrEqual(1);
   await bob.close();
