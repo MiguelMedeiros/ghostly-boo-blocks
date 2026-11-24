@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { BRICK, GLASS, PLANKS, STONE } from "../src/blocks.ts";
-import type { Core } from "../src/core.ts";
+import { decodePage, decodeSection } from "../src/codec.ts";
+import { Core } from "../src/core.ts";
+import { Limiter } from "../src/limiter.ts";
+import { META_KEY, WorldStore } from "../src/store.ts";
+import { cellOfLocal, stampOf, World } from "../src/world.ts";
 import { cellIndex } from "../src/terrain.ts";
 import { MockBroker, pairBrokers } from "./mockBroker.ts";
 import { closeSide, converged, openSide, waitFor } from "./helpers.ts";
@@ -164,5 +168,125 @@ describe("building together", () => {
     bob = await side(b);
     await waitFor(() => bob.world.get(30, 50, 30) === BRICK, 2000);
     expect(cellIndex(30, 50, 30)).toBeGreaterThan(0);
+  });
+});
+
+describe("New world, when storage is cut short", () => {
+  /** Bob's storage holds a world of 12 000 edits in three pages. */
+  async function bobsOldWorld(b: MockBroker): Promise<void> {
+    const world = new World();
+    const store = new WorldStore(b, new Limiter(), world);
+    world.onEdit = (cell) => store.track(cell);
+    await store.load();
+    for (let i = 0; i < 12_000; i++) world.apply(i, stampOf(i + 1, BRICK));
+    await store.flush();
+  }
+
+  it("a reload while taking the contact's new world finds it without the old edits", async () => {
+    const [a, b] = pairBrokers();
+    await bobsOldWorld(b);
+    a.stored.set(META_KEY, JSON.stringify({ v: 1, w: [1, 4242, 1] }));
+    let writes = 0;
+    // Bob's page goes right after his first write for the new world.
+    b.hang = () => ++writes > 1;
+    await side(a);
+    b.launch();
+    const bob = new Core(b, {}, { tickMs: 20, flushMs: 50 });
+    await bob.open();
+    expect(bob.world.edits.size).toBe(12_000);
+    await waitFor(() => writes > 1, 5000, "Bob to start taking the new world");
+    void bob.close();
+    b.shutdown();
+    const next = new MockBroker("bob");
+    for (const [key, value] of b.stored) next.stored.set(key, value);
+    const world = new World();
+    const again = new WorldStore(next, new Limiter(), world);
+    expect(await again.load()).toBe("loaded");
+    expect(world.id).toEqual({ generator: 1, seed: 4242, epoch: 1 });
+    expect(world.edits.size).toBe(0);
+    expect([...next.stored.keys()]).toEqual([META_KEY]);
+  }, 20_000);
+
+  it("New world still tells the contact when deleting an old page fails", async () => {
+    const [a, b] = pairBrokers();
+    const ana = await side(a);
+    const bob = await side(b);
+    for (let i = 0; i < 5; i++) ana.place(10 + i, 50, 10, PLANKS);
+    await waitFor(() => converged(ana, bob) && a.stored.has("p0"), 2000, "Ana's edits stored and with Bob");
+    a.fail = (op) => (op === "delete" ? "failed" : null);
+    await ana.newWorld(4242);
+    expect(ana.store.failed).toBe(true);
+    await waitFor(() => bob.world.id.seed === 4242, 3000, "Bob to take the new world");
+    expect(bob.world.edits.size).toBe(0);
+    a.fail = () => null;
+    ana.place(10, 55, 10, GLASS);
+    await waitFor(() => bob.world.get(10, 55, 10) === GLASS, 2000);
+    await closeSide(a, ana);
+    const again = await side(a);
+    expect(again.world.id.seed).toBe(4242);
+    expect(again.world.edits.size).toBe(1);
+  });
+});
+
+describe("the contact's hello and the event that says they opened, in either order", () => {
+  /** How many times `from` sent the record of `cell`, in ticks and section frames. */
+  function sends(from: MockBroker, cell: number): number {
+    let n = 0;
+    for (const value of from.sent) {
+      const frame = value as { t?: string; k?: number; e?: string };
+      if (frame.t === "tick" && frame.e) n += (decodePage(frame.e) ?? []).filter(([c]) => c === cell).length;
+      if (frame.t === "sec" && frame.e) n += (decodeSection(frame.e) ?? []).filter(([local]) => cellOfLocal(frame.k!, local) === cell).length;
+    }
+    return n;
+  }
+
+  it("sends an edit made between an early hello and the late open event, once", async () => {
+    const [a, b] = pairBrokers();
+    const ana = await side(a);
+    a.holdPeer();
+    const bob = await side(b);
+    // Bob's hello came first: Ana takes him as here and answers; the event that says he opened is still on its way.
+    await waitFor(() => ana.session.state === "here" && bob.session.counts.received > 0, 2000, "the hellos");
+    expect(ana.place(30, 50, 30, BRICK)).toBe(true);
+    a.releasePeer();
+    await waitFor(() => bob.world.get(30, 50, 30) === BRICK, 2000, "Bob to get Ana's edit");
+    await new Promise((r) => setTimeout(r, 100));
+    await b.settled();
+    expect(sends(a, cellIndex(30, 50, 30))).toBe(1);
+    expect(converged(ana, bob)).toBe(true);
+  });
+
+  it("sends an edit made after the open event and the hellos, once", async () => {
+    const [a, b] = pairBrokers();
+    const ana = await side(a);
+    const bob = await side(b);
+    await waitFor(() => ana.session.counts.received > 0 && bob.session.counts.received > 0, 2000, "the hellos");
+    expect(ana.place(30, 50, 30, BRICK)).toBe(true);
+    await waitFor(() => bob.world.get(30, 50, 30) === BRICK, 2000, "Bob to get Ana's edit");
+    await new Promise((r) => setTimeout(r, 100));
+    await b.settled();
+    expect(sends(a, cellIndex(30, 50, 30))).toBe(1);
+    expect(converged(ana, bob)).toBe(true);
+  });
+
+  it("after the contact closed and opened again, sends what was built alone and an edit before the late open event", async () => {
+    const [a, b] = pairBrokers();
+    const ana = await side(a);
+    let bob = await side(b);
+    await waitFor(() => ana.session.counts.received > 0 && bob.session.counts.received > 0, 2000, "the hellos");
+    await closeSide(b, bob);
+    expect(ana.session.state).toBe("waiting");
+    expect(ana.place(10, 50, 10, PLANKS)).toBe(true);
+    a.holdPeer();
+    bob = await side(b);
+    await waitFor(() => ana.session.state === "here" && bob.world.get(10, 50, 10) === PLANKS, 2000, "Bob's hello and what Ana built alone");
+    expect(ana.place(100, 50, 100, BRICK)).toBe(true);
+    a.releasePeer();
+    await waitFor(() => bob.world.get(100, 50, 100) === BRICK, 2000, "Bob to get Ana's edit");
+    await new Promise((r) => setTimeout(r, 100));
+    await b.settled();
+    expect(sends(a, cellIndex(10, 50, 10))).toBe(1);
+    expect(sends(a, cellIndex(100, 50, 100))).toBe(1);
+    expect(converged(ana, bob)).toBe(true);
   });
 });
