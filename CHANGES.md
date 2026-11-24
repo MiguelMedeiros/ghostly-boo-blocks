@@ -4,6 +4,10 @@ Each version Boo Blocks publishes, newest first. The manifest's `releaseNotes` i
 
 ## Unreleased
 
+- The help and the New world question are named for a screen reader and keep the keyboard while open. Before, a
+  screen reader said only "dialog"; the focus stayed behind them, and Tab from their buttons went on to the hotbar.
+  Opened from ? or the menu, Close or Cancel has the keyboard, Tab goes round the dialog's buttons, and closing it
+  gives the keys back to the world.
 - A click with the mouse's wheel, or its back or forward button, breaks nothing. Before, every button but the right one
   broke the block under the cursor, so pressing the wheel while picking a block with it took a block away.
 - A person in the sea climbs out onto the shore: swimming up against a block one above the water, with the head out,
