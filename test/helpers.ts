@@ -11,10 +11,10 @@ export async function waitFor(check: () => boolean, ms = 5000, what = "the condi
   }
 }
 
-/** Opens Boo Blocks on a side: the person opens the app, the page starts. Fast ticks, so tests run quickly. */
+/** Opens Boo Blocks on a side: the person opens the app, the page starts. Fast ticks and retries, so tests run quickly. */
 export async function openSide(broker: MockBroker, hooks: CoreHooks = {}): Promise<Core> {
   broker.launch();
-  const core = new Core(broker, hooks, { tickMs: 20, flushMs: 50 });
+  const core = new Core(broker, hooks, { tickMs: 20, flushMs: 50, retryMs: 200 });
   await core.open();
   return core;
 }
