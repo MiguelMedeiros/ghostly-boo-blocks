@@ -26,7 +26,8 @@ and is checked by CI; "Sign" and the store's index are the owner's steps.
 1. Raise `version` in `ghostly-app.json`, `package.json` and `package-lock.json` (`npm version <x.y.z>
    --no-git-tag-version` does the last two; `test/version.test.ts` fails when the three differ). Write
    `releaseNotes` in `ghostly-app.json`: one line, at most 500 characters.
-2. Add the version to [CHANGES.md](../CHANGES.md).
+2. Add the version to [CHANGES.md](../CHANGES.md): its section takes the bullets of every
+   [changes/](../changes/)`*.md` file (not the README), and those files are deleted in the same pull request.
 3. Run everything:
 
    ```sh

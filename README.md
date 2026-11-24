@@ -86,7 +86,7 @@ Before a release, check these and tick them, with the client versions, in the re
 | `ghostly-app.json` | The manifest, without `publisher`, `sequence` and `files` (the CLI writes those) |
 | `assets/icon.png`, `scripts/icon.mjs` | The icon (512 x 512, a ghost holding a grass block), drawn by code: `npm run gen:icon` writes it, and `test/icon.test.ts` checks the committed file is the script's output |
 | `scripts/stage.mjs`, `scripts/bundle.mjs` | `npm run stage`: the folder `ghostly app publish` signs. `npm run check:bundle`: whether a signed bundle is this build, and the store's listing for it |
-| `CHANGES.md`, `docs/PUBLISHING.md`, `docs/protocol.md` | What each version changed, how a version is published, the protocol |
+| `CHANGES.md`, `changes/`, `docs/PUBLISHING.md`, `docs/protocol.md` | What each version changed (a pull request adds a file to `changes/`, never to CHANGES.md), how a version is published, the protocol |
 
 ## Publish a new version
 
