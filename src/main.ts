@@ -195,24 +195,33 @@ async function main(): Promise<void> {
     return raycast(world, [player!.x, player!.y + EYE, player!.z], dir);
   }
 
-  function act(place: boolean, at: [number, number] | null): void {
+  /** Breaks or places a block. Returns what to say when nothing happened and the person should hear why, else null. */
+  function act(place: boolean, at: [number, number] | null): string | null {
     sound.wake();
     const hit = target(at);
-    if (!hit) return;
+    if (!hit) return place ? strings.nothingToPlace : strings.nothingToBreak;
     if (place) {
       const [x, y, z] = hit.before;
       const block = PALETTE[selected];
-      if (!inWorld(x, y, z)) return;
-      if (BLOCKS[block]?.solid && player!.overlaps(x, y, z)) return;
-      if (ghost && BLOCKS[block]?.solid && Math.abs(ghost.at[0] - (x + 0.5)) < 0.7 && Math.abs(ghost.at[2] - (z + 0.5)) < 0.7 && y >= Math.floor(ghost.at[1]) && y < ghost.at[1] + 1.5) return;
+      if (!inWorld(x, y, z)) return strings.nothingToPlace;
+      if (BLOCKS[block]?.solid && player!.overlaps(x, y, z)) return strings.noRoomYou;
+      if (ghost && BLOCKS[block]?.solid && Math.abs(ghost.at[0] - (x + 0.5)) < 0.7 && Math.abs(ghost.at[2] - (z + 0.5)) < 0.7 && y >= Math.floor(ghost.at[1]) && y < ghost.at[1] + 1.5) return strings.noRoomContact(contactName(core.session.contact));
       if (core.place(x, y, z, block)) sound.place(BLOCKS[block]!.sound);
       else if (world.full) ui!.notice(strings.worldFull);
     } else {
       const [x, y, z] = hit.cell;
       const block = world.get(x, y, z);
-      if (BLOCKS[block]?.fixed) return;
+      if (BLOCKS[block]?.fixed) return strings.cannotBreak;
       if (core.place(x, y, z, AIR)) sound.breakBlock(BLOCKS[block]?.sound ?? "stone");
+      else if (world.full) ui!.notice(strings.worldFull);
     }
+    return null;
+  }
+
+  /** Q and E: the same as a click at the centre, and a word when nothing happened (the world shows no cursor to them). */
+  function actByKey(place: boolean): void {
+    const miss = act(place, null);
+    if (miss) ui!.hint(miss);
   }
 
   // Pointer: drag to look; a click (or a tap) that did not drag acts.
@@ -279,8 +288,8 @@ async function main(): Promise<void> {
     else if (e.code === "Minus") choose(10);
     else if (e.code === "Equal") choose(11);
     else if (e.code === "KeyF") toggleFly();
-    else if (e.code === "KeyQ") act(false, null);
-    else if (e.code === "KeyE") act(true, null);
+    else if (e.code === "KeyQ") actByKey(false);
+    else if (e.code === "KeyE") actByKey(true);
   });
   window.addEventListener("keyup", (e) => keys.delete(e.code));
   window.addEventListener("blur", () => {

@@ -4,6 +4,13 @@ Each version Boo Blocks publishes, newest first. The manifest's `releaseNotes` i
 
 ## Unreleased
 
+- Screen readers: the world is an application to them, so it no longer sits as a silent, role-less stop that takes
+  the focus (`role="application"`, named with the game and its keys), so W A S D, Q, E, the arrows and Space reach the
+  game instead of being taken for reading. The notices' status line is always in the page (empty and unseen between
+  notices), so "world full", "storage full" and "newer version" are read out the first time. Q and E say why when
+  they do nothing (nothing in reach, a block that can't be broken, you or your contact in the way), at most once
+  every 1.5 seconds; breaking a block in a full world now says the world is full too. The page's controls sit in a
+  `<main>` landmark.
 - The help and the New world question are named for a screen reader and keep the keyboard while open. Before, a
   screen reader said only "dialog"; the focus stayed behind them, and Tab from their buttons went on to the hotbar.
   Opened from ? or the menu, Close or Cancel has the keyboard, Tab goes round the dialog's buttons, and closing it
