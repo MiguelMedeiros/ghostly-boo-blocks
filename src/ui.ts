@@ -43,6 +43,7 @@ export class Ui {
   private readonly blockName: HTMLElement;
   private readonly help: HTMLElement;
   private readonly menu: HTMLElement;
+  private readonly menuButton: HTMLButtonElement;
   private readonly confirm: HTMLElement;
   private readonly flyButton: HTMLButtonElement;
   private readonly modeButton: HTMLButtonElement;
@@ -79,21 +80,27 @@ export class Ui {
     const menuButton = el("button", "round", "⋯");
     menuButton.setAttribute("aria-label", s.menu);
     menuButton.title = s.menu;
-    menuButton.addEventListener("click", () => (this.menu.hidden = !this.menu.hidden));
+    menuButton.setAttribute("aria-expanded", "false");
+    menuButton.addEventListener("click", () => this.showMenu(this.menu.hidden === true));
+    this.menuButton = menuButton;
     buttons.append(helpButton, menuButton);
     top.append(this.status, buttons);
     host.append(top);
 
     this.menu = el("div", "menu");
     this.menu.hidden = true;
+    // A toggle: named "Sound" with its state in aria-pressed, as ✓ and ✗ read out as "check mark" and "multiplication x".
     const sound = el("button", "item", `${s.sound}: ✓`);
+    sound.setAttribute("aria-label", s.sound);
+    sound.setAttribute("aria-pressed", "true");
     sound.addEventListener("click", () => {
       const on = actions.toggleSound();
       sound.textContent = `${s.sound}: ${on ? "✓" : "✗"}`;
+      sound.setAttribute("aria-pressed", String(on));
     });
     const newWorld = el("button", "item", s.newWorld);
     newWorld.addEventListener("click", () => {
-      this.menu.hidden = true;
+      this.showMenu(false);
       this.confirm.hidden = false;
     });
     this.menu.append(sound, newWorld);
@@ -147,6 +154,7 @@ export class Ui {
       if (key) slot.append(el("span", "key", key));
       const name = BLOCKS[block] ? s.blocks[BLOCKS[block]!.key] : "";
       slot.setAttribute("aria-label", name);
+      slot.setAttribute("aria-pressed", "false");
       slot.title = name;
       slot.addEventListener("click", (e) => {
         actions.select(i);
@@ -199,7 +207,10 @@ export class Ui {
   }
 
   select(index: number, name: string): void {
-    this.slots.forEach((slot, i) => slot.classList.toggle("selected", i === index));
+    this.slots.forEach((slot, i) => {
+      slot.classList.toggle("selected", i === index);
+      slot.setAttribute("aria-pressed", String(i === index));
+    });
     this.slots[index]?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
     this.blockName.textContent = name;
     this.blockName.classList.add("shown");
@@ -245,8 +256,14 @@ export class Ui {
     return !this.menu.hidden || !this.confirm.hidden || !this.help.hidden;
   }
 
+  /** Opens or closes the ⋯ menu; its button says which (aria-expanded). */
+  private showMenu(shown: boolean): void {
+    this.menu.hidden = !shown;
+    this.menuButton.setAttribute("aria-expanded", String(shown));
+  }
+
   closeMenus(): void {
-    this.menu.hidden = true;
+    this.showMenu(false);
     this.confirm.hidden = true;
     this.showHelp(false);
   }

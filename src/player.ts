@@ -14,6 +14,8 @@ const JUMP = 8.6;
 const WALK = 4.4;
 const FLY = 10;
 const SWIM = 2.4;
+/** Swimming at the surface against a block: up fast enough to climb out onto it, one block up as a jump on land. */
+const CLIMB_OUT = 5;
 
 export interface Controls {
   /** -1 to 1: back to forward. */
@@ -40,6 +42,8 @@ export class Player {
   inWater = false;
   /** Distance walked on the ground, for footsteps. */
   walked = 0;
+  /** A block stopped the last step sideways. */
+  private blocked = false;
 
   constructor(at: [number, number, number]) {
     [this.x, this.y, this.z] = at;
@@ -88,6 +92,9 @@ export class Player {
     } else if (this.inWater) {
       this.vy -= GRAVITY * 0.25 * dt;
       if (c.jump) this.vy = Math.min(this.vy + 30 * dt, SWIM);
+      // Swimming tops out with the feet just under the water's top, below any shore: against one, with the head out of
+      // the water, the person comes up as from a jump.
+      if (c.jump && this.blocked && world.get(Math.floor(this.x), Math.floor(this.y + EYE), Math.floor(this.z)) !== WATER) this.vy = Math.max(this.vy, CLIMB_OUT);
       this.vy = Math.max(this.vy, -SWIM * 1.5);
     } else {
       this.vy -= GRAVITY * dt;
@@ -95,6 +102,7 @@ export class Player {
       this.vy = Math.max(this.vy, -50);
     }
     const before = [this.x, this.z];
+    this.blocked = false;
     this.move(world, 0, this.vx * dt);
     this.move(world, 2, this.vz * dt);
     this.onGround = false;
@@ -127,10 +135,12 @@ export class Player {
       this.x = amount > 0 ? Math.floor(this.x + amount + HALF_WIDTH) - HALF_WIDTH - 1e-4 : Math.floor(this.x + amount - HALF_WIDTH) + 1 + HALF_WIDTH + 1e-4;
       if (this.collides(world, this.x, this.y, this.z)) this.x = pos[0] - amount;
       this.vx = 0;
+      this.blocked = true;
     } else {
       this.z = amount > 0 ? Math.floor(this.z + amount + HALF_WIDTH) - HALF_WIDTH - 1e-4 : Math.floor(this.z + amount - HALF_WIDTH) + 1 + HALF_WIDTH + 1e-4;
       if (this.collides(world, this.x, this.y, this.z)) this.z = pos[2] - amount;
       this.vz = 0;
+      this.blocked = true;
     }
   }
 
