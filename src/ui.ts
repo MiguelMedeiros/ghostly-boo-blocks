@@ -81,7 +81,13 @@ export class Ui {
     menuButton.setAttribute("aria-label", s.menu);
     menuButton.title = s.menu;
     menuButton.setAttribute("aria-expanded", "false");
-    menuButton.addEventListener("click", () => this.showMenu(this.menu.hidden === true));
+    menuButton.addEventListener("click", (e) => {
+      const shown = this.menu.hidden === true;
+      this.showMenu(shown);
+      // Closed with a pointer (detail > 0), the world has the keyboard again: ⋯ left focused takes Space and Enter and
+      // opens the menu again, so the person could not jump or fly up. Closed by keyboard, the focus stays on ⋯.
+      if (!shown && e.detail > 0) this.canvas.focus();
+    });
     this.menuButton = menuButton;
     buttons.append(helpButton, menuButton);
     top.append(this.status, buttons);

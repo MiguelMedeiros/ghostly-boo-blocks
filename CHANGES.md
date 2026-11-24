@@ -4,6 +4,9 @@ Each version Boo Blocks publishes, newest first. The manifest's `releaseNotes` i
 
 ## Unreleased
 
+- The menu (⋯) closed with the mouse gives the keys back to the world. Before, ⋯ kept the focus, so the next Space
+  opened the menu again instead of jumping, and the world took no keys until the person clicked it. Closed by
+  keyboard, ⋯ keeps the focus, as before.
 - A person in the sea climbs out onto the shore: swimming up against a block one above the water, with the head out,
   they come up as from a jump. Before, swimming topped out with the feet just under the water's top, so no shore could
   be reached and the only way out was to fly.
