@@ -91,6 +91,25 @@ export function project(viewProjection: Mat4, p: Vec3, width: number, height: nu
   return [((x / w + 1) / 2) * width, ((1 - y / w) / 2) * height];
 }
 
+/**
+ * Whether any of a sphere may be seen by a camera: false only when it lies wholly outside one side of the view
+ * volume (left, right, bottom, top, near or far). A sphere just past a corner may still say true.
+ */
+export function sphereInView(viewProjection: Mat4, centre: Vec3, radius: number): boolean {
+  const m = viewProjection;
+  for (let axis = 0; axis < 3; axis++) {
+    for (const sign of [1, -1]) {
+      // A side of the view volume: the matrix's fourth row plus or minus one of the first three.
+      const a = m[3] + sign * m[axis];
+      const b = m[7] + sign * m[4 + axis];
+      const c = m[11] + sign * m[8 + axis];
+      const d = m[15] + sign * m[12 + axis];
+      if (a * centre[0] + b * centre[1] + c * centre[2] + d < -radius * Math.hypot(a, b, c)) return false;
+    }
+  }
+  return true;
+}
+
 /** The direction of the ray through a point of the screen (ndc: -1 to 1 each way, y up). */
 export function rayThrough(yaw: number, pitch: number, fovY: number, aspect: number, ndcX: number, ndcY: number): Vec3 {
   const f = forward(yaw, pitch);
