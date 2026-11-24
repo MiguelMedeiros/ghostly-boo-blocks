@@ -14,6 +14,14 @@ async function edits(side: Side): Promise<number> {
 /** Spots on the world, as fractions of its size, low enough to point at the ground in front, above the hotbar. */
 const SPOTS: [number, number][] = [[0.5, 0.8], [0.5, 0.72], [0.42, 0.78], [0.58, 0.78], [0.5, 0.66], [0.35, 0.8], [0.65, 0.8], [0.5, 0.6], [0.3, 0.7], [0.7, 0.7]];
 
+/** Whether a spot of the world is the world itself, not a button over it (a phone's touch buttons cover some). */
+async function open(side: Side, position: { x: number; y: number }): Promise<boolean> {
+  return side.frame.locator("canvas.view").evaluate((canvas, { x, y }) => {
+    const rect = canvas.getBoundingClientRect();
+    return document.elementFromPoint(rect.left + x, rect.top + y) === canvas;
+  }, position);
+}
+
 /**
  * Breaks (left) or places (right) a block, or taps one on a phone: a person starts a few blocks from the middle at
  * random, so the spot that reaches a block differs; this tries spots until a cell changes.
@@ -25,6 +33,8 @@ async function build(side: Side, action: "left" | "right" | "tap"): Promise<void
   for (let round = 0; round < 5; round++) {
     for (const [fx, fy] of SPOTS) {
       const position = { x: Math.round(box.width * fx), y: Math.round(box.height * fy) };
+      // A click on a covered spot would wait for the button to move away until the test times out.
+      if (!(await open(side, position))) continue;
       if (action === "tap") await view.tap({ position });
       else await view.click({ position, button: action });
       try {
