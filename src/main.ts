@@ -249,8 +249,11 @@ async function main(): Promise<void> {
     const p = pointers.get(e.pointerId);
     pointers.delete(e.pointerId);
     if (!p || p.moved || e.type === "pointercancel") return;
-    if (p.type === "mouse") act(p.button === 2, [e.clientX, e.clientY]);
-    else act(placing, [e.clientX, e.clientY]);
+    // A mouse breaks with the main button and places with the second; the wheel pressed (picking a block with it) and
+    // the side buttons do nothing.
+    if (p.type === "mouse") {
+      if (p.button === 0 || p.button === 2) act(p.button === 2, [e.clientX, e.clientY]);
+    } else act(placing, [e.clientX, e.clientY]);
   };
   canvas.addEventListener("pointerup", release);
   canvas.addEventListener("pointercancel", release);

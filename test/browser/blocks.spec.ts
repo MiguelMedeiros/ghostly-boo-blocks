@@ -112,6 +112,30 @@ test("breaks and places blocks with the mouse, and keeps them after a reload", a
   await ana.close();
 });
 
+test("a click with the wheel or a side button of the mouse breaks nothing", async ({ browser }) => {
+  const chat = new Chat(browser);
+  const ana = await chat.open("ana", { inChat: false });
+  test.skip(!(await drawing(ana)), "no WebGL 2 in this browser here");
+  await dismissHelp(ana);
+  const view = ana.frame.locator("canvas.view");
+  const box = (await view.boundingBox())!;
+  // Playwright's mouse has no side buttons: the back button's events, made in the frame (its own coordinates).
+  const back = (type: string, clientX: number, clientY: number) => view.dispatchEvent(type, { pointerId: 7, pointerType: "mouse", button: 3, buttons: type === "pointerdown" ? 8 : 0, clientX, clientY });
+  const left = await view.evaluate((el) => el.getBoundingClientRect().left);
+  const top = await view.evaluate((el) => el.getBoundingClientRect().top);
+  for (const [fx, fy] of SPOTS) {
+    const position = { x: Math.round(box.width * fx), y: Math.round(box.height * fy) };
+    await view.click({ position, button: "middle" });
+    await back("pointerdown", left + position.x, top + position.y);
+    await back("pointerup", left + position.x, top + position.y);
+  }
+  await ana.page.waitForTimeout(1000);
+  expect(await edits(ana)).toBe(0);
+  // The same spots reach blocks: the main button breaks one.
+  await build(ana, "left");
+  await ana.close();
+});
+
 test("two people build in one world, see each other's name, and find it again after reopening", async ({ browser }) => {
   test.setTimeout(150_000);
   const chat = new Chat(browser);

@@ -4,6 +4,8 @@ Each version Boo Blocks publishes, newest first. The manifest's `releaseNotes` i
 
 ## Unreleased
 
+- A click with the mouse's wheel, or its back or forward button, breaks nothing. Before, every button but the right one
+  broke the block under the cursor, so pressing the wheel while picking a block with it took a block away.
 - A person in the sea climbs out onto the shore: swimming up against a block one above the water, with the head out,
   they come up as from a jump. Before, swimming topped out with the feet just under the water's top, so no shore could
   be reached and the only way out was to fly.
