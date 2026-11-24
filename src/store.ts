@@ -160,6 +160,8 @@ export class WorldStore {
         await this.call(() => this.api.storage.set(key, value));
         if (key !== META_KEY) this.storageFull = false;
       } catch (error) {
+        // The world started again while this write was out: its page belongs to the old world, which is gone.
+        if (generation !== this.generation) return;
         if (key !== META_KEY) this.dirty.add(Number(key.slice(1)));
         if (miniAppErrorCode(error) === "full") this.storageFull = true;
         else this.failed = true;
@@ -170,7 +172,8 @@ export class WorldStore {
   /**
    * Deletes the pages of `oldPages`: the mark first (`o` beside `w`, one write), then every page, then `w` alone.
    * True when all went. A failed call is noted (`failed`, `storageFull`) and the rest still tried; what is left is
-   * tried at the next flush. False also when another reset came meanwhile (its flush takes over).
+   * tried at the next flush. False also when another reset came meanwhile (its flush takes over); a call refused
+   * after that is not noted, as in `write`: it was the earlier reset's.
    */
   private async dropOldPages(generation: number): Promise<boolean> {
     const old = this.oldPages!;
@@ -180,7 +183,7 @@ export class WorldStore {
     try {
       keys = (await this.call(() => this.api.storage.keys())).filter((k) => PAGE.test(k));
     } catch {
-      this.failed = true;
+      if (!cut()) this.failed = true;
       return false;
     }
     keys.sort((a, b) => Number(a.slice(1)) - Number(b.slice(1)));
@@ -191,6 +194,8 @@ export class WorldStore {
         if (cut()) return false;
         this.marked = true;
       } catch (error) {
+        // Refused after another reset started: that reset's flush takes over, and the refusal is not its.
+        if (cut()) return false;
         const full = miniAppErrorCode(error) === "full";
         if (!full || !keys.length) {
           if (full) this.storageFull = true;
@@ -203,7 +208,7 @@ export class WorldStore {
         try {
           await this.call(() => this.api.storage.delete(key));
         } catch {
-          this.failed = true;
+          if (!cut()) this.failed = true;
           return false;
         }
       }
@@ -214,6 +219,7 @@ export class WorldStore {
       try {
         await this.call(() => this.api.storage.delete(key));
       } catch {
+        if (cut()) return false;
         this.failed = true;
         left++;
       }
@@ -222,6 +228,7 @@ export class WorldStore {
     try {
       await this.call(() => this.api.storage.set(META_KEY, metaOf(id)));
     } catch (error) {
+      if (cut()) return false;
       if (miniAppErrorCode(error) === "full") this.storageFull = true;
       else this.failed = true;
       return false;

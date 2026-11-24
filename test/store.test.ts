@@ -81,6 +81,36 @@ describe("storage", () => {
     expect(b.world.edits.size).toBe(0);
   });
 
+  it("forgets a page write of the old world that fails after the world starts again", async () => {
+    const broker = new MockBroker("ana", "0.1.0", false);
+    const a = fresh(broker);
+    await a.store.load();
+    for (let i = 0; i < RECORDS_PER_PAGE + 5; i++) a.world.apply(i, stampOf(i + 1, BRICK));
+    await a.store.flush();
+    // An edit in p1 whose write is still out when New world starts, and then is refused: storage full.
+    a.world.apply(RECORDS_PER_PAGE + 1, stampOf(RECORDS_PER_PAGE + 100, GLASS));
+    const set = broker.storage.set;
+    let refuse = () => {};
+    broker.storage.set = (key, value) => (key === "p1" ? new Promise((_, reject) => (refuse = () => reject(new Error("full")))) : set(key, value));
+    const flushing = a.store.flush();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const id = { generator: 1, seed: 99, epoch: 1 };
+    a.world.reset(id);
+    const resetting = a.store.reset(id);
+    refuse();
+    await flushing;
+    await resetting;
+    broker.storage.set = set;
+    // The old world's page is not the new one's: nothing to write again, and its storage is not full.
+    expect(a.store.storageFull).toBe(false);
+    expect(a.store.pending).toBe(false);
+    a.world.edit(10, 50, 10, BRICK);
+    await a.store.flush();
+    const b = fresh(broker);
+    await b.store.load();
+    expect(b.world.get(10, 50, 10)).toBe(BRICK);
+  });
+
   it("leaves a world made by a later generator alone", async () => {
     const broker = new MockBroker("ana", "0.1.0", false);
     broker.stored.set(META_KEY, JSON.stringify({ v: 2, w: [7, 1, 1] }));
@@ -223,5 +253,64 @@ describe("New world and storage", () => {
     expect(new Map(a.world.edits)).toEqual(new Map([...p0, ...p1]));
     expect(writes).toEqual([]);
     expect(broker.stored).toEqual(before);
+  });
+
+  it("a page save refused while New world starts: New world still finishes, and the reload has none of the old edits", async () => {
+    const broker = new MockBroker("ana", "0.1.0", false);
+    const a = await storedWorld(broker);
+    // An edit in p1 whose save is still out when New world starts, and is then refused: storage full.
+    a.world.apply(RECORDS_PER_PAGE + 1, stampOf(OLD_EDITS + 100, GLASS));
+    const set = broker.storage.set;
+    let refuse: (() => void) | null = null;
+    broker.storage.set = (key, value) =>
+      key === "p1" ? new Promise<void>((_, reject) => (refuse = () => reject(new Error("full")))) : set(key, value);
+    const saving = a.store.flush();
+    await waitFor(() => refuse !== null, 5000, "the save of p1 to be out");
+    a.world.reset(NEW);
+    const resetting = a.store.reset(NEW);
+    refuse!();
+    await saving;
+    await expect(resetting).resolves.toBeUndefined();
+    broker.storage.set = set;
+    expect(a.store.storageFull).toBe(false);
+    expect(a.store.failed).toBe(false);
+    expect(a.store.pending).toBe(false);
+    expect(pageKeys(broker)).toEqual([]);
+    expect(meta(broker)).toEqual({ v: 1, w: [1, 4242, 1] });
+    const b = fresh(reopened(broker));
+    expect(await b.store.load()).toBe("loaded");
+    expect(b.world.id).toEqual(NEW);
+    expect(b.world.edits.size).toBe(0);
+    // The new world's own saves are not spoiled by the old world's page.
+    a.world.edit(5, 40, 5, GLASS);
+    await a.store.flush();
+    expect(pageKeys(broker)).toEqual(["p0"]);
+    const c = fresh(reopened(broker));
+    await c.store.load();
+    expect(c.world.edits).toEqual(a.world.edits);
+  });
+
+  it("a step of New world refused after a second New world started is not shown as the second's", async () => {
+    const broker = new MockBroker("ana", "0.1.0", false);
+    const a = await storedWorld(broker);
+    // The first New world's mark is still out when the second starts, and is then refused (a broker failure).
+    const set = broker.storage.set;
+    let refuse: (() => void) | null = null;
+    broker.storage.set = (key, value) => {
+      const marking = key === META_KEY && refuse === null && typeof value === "object" && value !== null && "o" in value;
+      return marking ? new Promise<void>((_, reject) => (refuse = () => reject(new Error("failed")))) : set(key, value);
+    };
+    a.world.reset(NEW);
+    const first = a.store.reset(NEW);
+    await waitFor(() => refuse !== null, 5000, "the first mark to be out");
+    const again = { generator: 1, seed: 5, epoch: 2 };
+    a.world.reset(again);
+    const second = a.store.reset(again);
+    refuse!();
+    await expect(Promise.all([first, second])).resolves.toBeDefined();
+    expect(a.store.storageFull).toBe(false);
+    expect(a.store.failed).toBe(false);
+    expect(pageKeys(broker)).toEqual([]);
+    expect(meta(broker)).toEqual({ v: 1, w: [1, 5, 2] });
   });
 });
