@@ -104,6 +104,35 @@ test("a block picked with the mouse leaves the keys to the world: Space still fl
   await ana.close();
 });
 
+test("the wheel picks a block a notch at a time: a trackpad swipe moves a slot or two, sideways goes forward", async ({ browser }) => {
+  const chat = new Chat(browser);
+  const ana = await chat.open("ana", { inChat: false });
+  test.skip(!(await drawing(ana)), "no WebGL 2 in this browser here");
+  await dismissHelp(ana);
+  const slot = () => ana.frame.locator(".hotbar .slot").evaluateAll((slots) => slots.findIndex((s) => s.classList.contains("selected")));
+  const box = (await ana.frame.locator("canvas.view").boundingBox())!;
+  await ana.page.mouse.move(box.x + box.width / 2, box.y + box.height / 3);
+  expect(await slot()).toBe(0);
+  // A mouse notch: one slot.
+  await ana.page.mouse.wheel(0, 100);
+  await expect.poll(slot).toBe(1);
+  // A short trackpad swipe, 20 events of 4 px: a slot or two, not 20. Sent in one go in the page, so no two of them
+  // can land 200 ms apart on a slow runner (that would start a new turn and move a slot each).
+  await ana.page.waitForTimeout(400);
+  await ana.frame.locator("canvas.view").evaluate((canvas) => {
+    for (let i = 0; i < 20; i++) canvas.dispatchEvent(new WheelEvent("wheel", { deltaY: 4, bubbles: true, cancelable: true }));
+  });
+  await ana.page.waitForTimeout(100);
+  const after = await slot();
+  expect(after).toBeGreaterThanOrEqual(2);
+  expect(after).toBeLessThanOrEqual(3);
+  // Sideways (as Shift + wheel arrives in Chromium and on macOS): forward, not back.
+  await ana.page.waitForTimeout(400);
+  await ana.page.mouse.wheel(60, 0);
+  await expect.poll(slot).toBe(after + 1);
+  await ana.close();
+});
+
 test("its dialogs are named, and one the person opens takes the keyboard, keeps Tab in it and gives it back to the world", async ({ browser }) => {
   const chat = new Chat(browser);
   const ana = await chat.open("ana", { inChat: false });
