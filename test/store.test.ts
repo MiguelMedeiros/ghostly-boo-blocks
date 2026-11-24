@@ -254,4 +254,63 @@ describe("New world and storage", () => {
     expect(writes).toEqual([]);
     expect(broker.stored).toEqual(before);
   });
+
+  it("a page save refused while New world starts: New world still finishes, and the reload has none of the old edits", async () => {
+    const broker = new MockBroker("ana", "0.1.0", false);
+    const a = await storedWorld(broker);
+    // An edit in p1 whose save is still out when New world starts, and is then refused: storage full.
+    a.world.apply(RECORDS_PER_PAGE + 1, stampOf(OLD_EDITS + 100, GLASS));
+    const set = broker.storage.set;
+    let refuse: (() => void) | null = null;
+    broker.storage.set = (key, value) =>
+      key === "p1" ? new Promise<void>((_, reject) => (refuse = () => reject(new Error("full")))) : set(key, value);
+    const saving = a.store.flush();
+    await waitFor(() => refuse !== null, 5000, "the save of p1 to be out");
+    a.world.reset(NEW);
+    const resetting = a.store.reset(NEW);
+    refuse!();
+    await saving;
+    await expect(resetting).resolves.toBeUndefined();
+    broker.storage.set = set;
+    expect(a.store.storageFull).toBe(false);
+    expect(a.store.failed).toBe(false);
+    expect(a.store.pending).toBe(false);
+    expect(pageKeys(broker)).toEqual([]);
+    expect(meta(broker)).toEqual({ v: 1, w: [1, 4242, 1] });
+    const b = fresh(reopened(broker));
+    expect(await b.store.load()).toBe("loaded");
+    expect(b.world.id).toEqual(NEW);
+    expect(b.world.edits.size).toBe(0);
+    // The new world's own saves are not spoiled by the old world's page.
+    a.world.edit(5, 40, 5, GLASS);
+    await a.store.flush();
+    expect(pageKeys(broker)).toEqual(["p0"]);
+    const c = fresh(reopened(broker));
+    await c.store.load();
+    expect(c.world.edits).toEqual(a.world.edits);
+  });
+
+  it("a step of New world refused after a second New world started is not shown as the second's", async () => {
+    const broker = new MockBroker("ana", "0.1.0", false);
+    const a = await storedWorld(broker);
+    // The first New world's mark is still out when the second starts, and is then refused (a broker failure).
+    const set = broker.storage.set;
+    let refuse: (() => void) | null = null;
+    broker.storage.set = (key, value) => {
+      const marking = key === META_KEY && refuse === null && typeof value === "object" && value !== null && "o" in value;
+      return marking ? new Promise<void>((_, reject) => (refuse = () => reject(new Error("failed")))) : set(key, value);
+    };
+    a.world.reset(NEW);
+    const first = a.store.reset(NEW);
+    await waitFor(() => refuse !== null, 5000, "the first mark to be out");
+    const again = { generator: 1, seed: 5, epoch: 2 };
+    a.world.reset(again);
+    const second = a.store.reset(again);
+    refuse!();
+    await expect(Promise.all([first, second])).resolves.toBeDefined();
+    expect(a.store.storageFull).toBe(false);
+    expect(a.store.failed).toBe(false);
+    expect(pageKeys(broker)).toEqual([]);
+    expect(meta(broker)).toEqual({ v: 1, w: [1, 5, 2] });
+  });
 });
