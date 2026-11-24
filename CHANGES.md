@@ -11,6 +11,10 @@ Each version Boo Blocks publishes, newest first. The manifest's `releaseNotes` i
   they do nothing (nothing in reach, a block that can't be broken, you or your contact in the way), at most once
   every 1.5 seconds; breaking a block in a full world now says the world is full too. The page's controls sit in a
   `<main>` landmark.
+- The help and the New world question are named for a screen reader and keep the keyboard while open. Before, a
+  screen reader said only "dialog"; the focus stayed behind them, and Tab from their buttons went on to the hotbar.
+  Opened from ? or the menu, Close or Cancel has the keyboard, Tab goes round the dialog's buttons, and closing it
+  gives the keys back to the world.
 - A click with the mouse's wheel, or its back or forward button, breaks nothing. Before, every button but the right one
   broke the block under the cursor, so pressing the wheel while picking a block with it took a block away.
 - A person in the sea climbs out onto the shore: swimming up against a block one above the water, with the head out,
@@ -25,6 +29,11 @@ Each version Boo Blocks publishes, newest first. The manifest's `releaseNotes` i
 - A screen reader hears which block is picked in the hotbar (pressed), whether the ⋯ menu is open (expanded) and
   whether sound is on. Before, the picked slot and the sound switch showed it only by colour and by ✓ or ✗, which
   read out as "check mark" and "multiplication x".
+- New world, and taking the contact's newer world, no longer leave the old world's blocks in the new one when the page
+  closes (a reload, another chat) while the old blocks are being deleted: the stored world says which world its pages
+  belong to, and the next open finishes deleting them. A delete that fails no longer stops the contact being told of
+  the new world; it is tried again later. The stored `world` gets an `o` field while the deletes are pending (1.0.1
+  ignores it).
 
 ## 1.0.1 (sequence 2)
 

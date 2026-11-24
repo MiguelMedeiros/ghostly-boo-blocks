@@ -6,6 +6,9 @@
 export type Vec3 = [number, number, number];
 export type Mat4 = Float32Array;
 
+/** An angle in radians brought into [-π, π]: the same direction, however many turns it took to get there. */
+export const wrapAngle = (a: number): number => Math.atan2(Math.sin(a), Math.cos(a));
+
 export function perspective(fovY: number, aspect: number, near: number, far: number): Mat4 {
   const f = 1 / Math.tan(fovY / 2);
   const m = new Float32Array(16);
