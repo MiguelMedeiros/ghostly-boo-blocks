@@ -22,6 +22,11 @@ Each version Boo Blocks publishes, newest first. The manifest's `releaseNotes` i
 - A screen reader hears which block is picked in the hotbar (pressed), whether the ⋯ menu is open (expanded) and
   whether sound is on. Before, the picked slot and the sound switch showed it only by colour and by ✓ or ✗, which
   read out as "check mark" and "multiplication x".
+- New world, and taking the contact's newer world, no longer leave the old world's blocks in the new one when the page
+  closes (a reload, another chat) while the old blocks are being deleted: the stored world says which world its pages
+  belong to, and the next open finishes deleting them. A delete that fails no longer stops the contact being told of
+  the new world; it is tried again later. The stored `world` gets an `o` field while the deletes are pending (1.0.1
+  ignores it).
 
 ## 1.0.1 (sequence 2)
 

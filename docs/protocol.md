@@ -63,9 +63,16 @@ Per chat (and alone), in the app's storage (WISP 1200, 5 MiB a scope):
 
 | Key | Value |
 |---|---|
-| `world` | `{"v": 1, "w": [generator, seed, epoch]}` |
-| `p0`, `p1`, … | Pages of edits, each up to 5000 `tick`-style 8-byte records in base64url (under the 64 KiB a value may be). A cell stays in the page it was first written to |
+| `world` | `{"v": 1, "w": [generator, seed, epoch]}`, and `"o": [generator, seed, epoch]` while a new world's old pages are being deleted |
+| `p0`, `p1`, … | Pages of edits, each up to 5000 `tick`-style 8-byte records in base64url (under the 64 KiB a value may be). A cell stays in the page it was first written to. They are the edits of `w`, or of `o` when it is there |
 | `me` | Where this side's person stood: `[x, y, z, yaw, pitch, flying]` |
+
+Taking a new world (New world, or the contact's newer one) writes `w` with `o` (the world the pages belong to) in one
+write, deletes every page, then writes `w` alone. No page of the new world is written while `o` is stored. If the page
+closes at any step, the next open finds `o`, reads none of the pages and finishes deleting them, so the old world's
+edits never count as the new one's. A delete that fails is tried again at the next write and the next open. A store
+written by 1.0.1 has no `o`, and its pages are `w`'s; but a 1.0.1 store whose New world was cut short (the new `w`
+written, some old pages left) cannot be told apart, and its old edits still load as the new world's.
 
 400,000 edits fill about 4.3 MB with the keys' own cost, under the 5 MiB. A world made by a later generator than
 this version knows is left alone, and the page asks to update.
