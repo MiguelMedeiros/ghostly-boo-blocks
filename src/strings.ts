@@ -26,6 +26,8 @@ export interface Strings {
   helpTitle: string;
   helpKeys: [string, string][];
   helpTouch: [string, string][];
+  /** The keys are read by position: the letters are where they sit on a US keyboard. */
+  helpLayout: string;
   helpTogether: string;
   close: string;
   menu: string;
@@ -82,6 +84,7 @@ export const en: Strings = {
     ["Tap", "Break or place, as the hammer button says"],
     ["Arrows", "Walk"],
   ],
+  helpLayout: "Letter keys go by where they sit, as on a US keyboard: on a French one, W A S D is Z Q S D and Q / E is A / E.",
   helpTogether: "In a chat, your contact builds in the same world. Each of you keeps it for this chat, and the two merge whenever you are both in.",
   close: "Close",
   menu: "Menu",
@@ -154,6 +157,7 @@ export const pt: Strings = {
     ["Tocar", "Quebrar ou colocar, como diz o botão do martelo"],
     ["Setas", "Andar"],
   ],
+  helpLayout: "As letras valem pela posição da tecla, como num teclado americano: num francês, W A S D é Z Q S D e Q / E é A / E.",
   helpTogether: "Numa conversa, seu contato constrói no mesmo mundo. Cada um guarda o mundo desta conversa, e os dois se juntam sempre que vocês estão dentro.",
   close: "Fechar",
   menu: "Menu",
