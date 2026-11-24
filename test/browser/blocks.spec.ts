@@ -138,6 +138,30 @@ test("breaks and places blocks with the mouse, and keeps them after a reload", a
   await ana.close();
 });
 
+test("a click with the wheel or a side button of the mouse breaks nothing", async ({ browser }) => {
+  const chat = new Chat(browser);
+  const ana = await chat.open("ana", { inChat: false });
+  test.skip(!(await drawing(ana)), "no WebGL 2 in this browser here");
+  await dismissHelp(ana);
+  const view = ana.frame.locator("canvas.view");
+  const box = (await view.boundingBox())!;
+  // Playwright's mouse has no side buttons: the back button's events, made in the frame (its own coordinates).
+  const back = (type: string, clientX: number, clientY: number) => view.dispatchEvent(type, { pointerId: 7, pointerType: "mouse", button: 3, buttons: type === "pointerdown" ? 8 : 0, clientX, clientY });
+  const left = await view.evaluate((el) => el.getBoundingClientRect().left);
+  const top = await view.evaluate((el) => el.getBoundingClientRect().top);
+  for (const [fx, fy] of SPOTS) {
+    const position = { x: Math.round(box.width * fx), y: Math.round(box.height * fy) };
+    await view.click({ position, button: "middle" });
+    await back("pointerdown", left + position.x, top + position.y);
+    await back("pointerup", left + position.x, top + position.y);
+  }
+  await ana.page.waitForTimeout(1000);
+  expect(await edits(ana)).toBe(0);
+  // The same spots reach blocks: the main button breaks one.
+  await build(ana, "left");
+  await ana.close();
+});
+
 test("two people build in one world, see each other's name, and find it again after reopening", async ({ browser }) => {
   test.setTimeout(150_000);
   const chat = new Chat(browser);
@@ -167,13 +191,14 @@ test("two people build in one world, see each other's name, and find it again af
 
   // Ana walks ahead of Bob: he sees her ghost and her name over it.
   await anaView.focus();
-  // Both start facing the same way, a few blocks apart: two seconds ahead (jumping any step) puts her in his view.
+  // Both start facing the same way, each up to 3 blocks from the middle at random, so she may start 6 behind him; and a
+  // slow page (a few frames a second without a GPU) walks less than its time. She walks (jumping any step) until he
+  // sees her, rather than for a fixed time.
   await ana.page.keyboard.down("KeyW");
   await ana.page.keyboard.down("Space");
-  await ana.page.waitForTimeout(2000);
+  await expect(bob.frame.locator(".name-tag")).toBeVisible({ timeout: 30_000 });
   await ana.page.keyboard.up("Space");
   await ana.page.keyboard.up("KeyW");
-  await expect(bob.frame.locator(".name-tag")).toBeVisible();
   await expect(bob.frame.locator(".name-tag")).toHaveText("Ana");
   await bob.page.screenshot({ path: test.info().outputPath("bob-sees-ana.png") });
 
@@ -200,6 +225,51 @@ test("two people build in one world, see each other's name, and find it again af
   expect(ana.overLimit + bob.overLimit + anaAgain.overLimit).toBe(0);
   await anaAgain.close();
   await bob.close();
+});
+
+/** Counts the frames the app draws (each starts with one clear), from now on. */
+async function countDraws(side: Side): Promise<() => Promise<number>> {
+  await side.frame.evaluate(() => {
+    const w = window as unknown as { __draws: number };
+    w.__draws = 0;
+    const clear = WebGL2RenderingContext.prototype.clear;
+    WebGL2RenderingContext.prototype.clear = function (this: WebGL2RenderingContext, mask: number) {
+      w.__draws++;
+      clear.call(this, mask);
+    };
+  });
+  return () => side.frame.evaluate(() => (window as unknown as { __draws: number }).__draws);
+}
+
+async function drawsOver(side: Side, draws: () => Promise<number>, ms: number): Promise<number> {
+  const before = await draws();
+  await side.page.waitForTimeout(ms);
+  return (await draws()) - before;
+}
+
+test("redraws for the contact's ghost only while it is in view", async ({ browser }) => {
+  const chat = new Chat(browser);
+  // Both fly over the middle, 8 blocks apart and facing the same way: Ana sees Bob's back, Bob has Ana behind him.
+  const ana = await chat.open("ana", { displayName: "Ana", storage: new Map([["me", JSON.stringify([64, 70, 64, Math.PI, 0, 1])]]) });
+  test.skip(!(await drawing(ana)), "no WebGL 2 in this browser here");
+  const bob = await chat.open("bob", { displayName: "Bob", storage: new Map([["me", JSON.stringify([64, 70, 72, Math.PI, 0, 1])]]) });
+  await expect(ana.frame.locator(".status")).toHaveText("Building with Bob");
+  await expect(ana.frame.locator(".name-tag")).toBeVisible();
+  const draws = await countDraws(ana);
+  // In view, the ghost bobs: the world is drawn again and again though nobody moves.
+  await ana.page.waitForTimeout(1500);
+  expect(await drawsOver(ana, draws, 2000)).toBeGreaterThanOrEqual(4);
+
+  // Ana turns round: Bob's ghost is behind her, and an idle world is not drawn at all.
+  await ana.frame.locator("canvas.view").focus();
+  await ana.page.keyboard.down("ArrowLeft");
+  await ana.page.waitForTimeout(1400);
+  await ana.page.keyboard.up("ArrowLeft");
+  await expect(ana.frame.locator(".name-tag")).toBeHidden();
+  await ana.page.waitForTimeout(1500);
+  expect(await drawsOver(ana, draws, 2000)).toBeLessThanOrEqual(1);
+  await bob.close();
+  await ana.close();
 });
 
 test("fits a phone: touch buttons, a hotbar that scrolls within the screen, tap to break and to place", async ({ browser, browserName }) => {

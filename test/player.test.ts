@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { AIR, BRICK, STONE } from "../src/blocks.ts";
+import { AIR, BRICK, STONE, WATER } from "../src/blocks.ts";
 import { Player } from "../src/player.ts";
 import { raycast } from "../src/raycast.ts";
 import { forward, project, multiply, perspective, view } from "../src/render/math.ts";
 import type { BlockSource } from "../src/render/mesher.ts";
-import { meshSection } from "../src/render/mesher.ts";
+import { FLOATS_PER_VERTEX, ghostMesh, meshSection } from "../src/render/mesher.ts";
+import { FOV, ghostInView } from "../src/render/renderer.ts";
 import { drawAtlas } from "../src/render/atlas.ts";
 import { World } from "../src/world.ts";
 
@@ -53,6 +54,38 @@ describe("the person", () => {
     expect(p.y).toBeCloseTo(10, 3);
   });
 
+  /** A sea for x < 20 (its floor's top at y = 20, water up to y = 21), and a shore at x >= 20 `shore` blocks above it. */
+  const sea = (shore: number): BlockSource => ({ get: (x, y) => (x < 20 ? (y < 20 ? STONE : y < 21 ? WATER : AIR) : y < 21 + shore - 1 ? STONE : AIR) });
+
+  it("swims out of the sea onto a shore one block up, at any frame rate", () => {
+    for (const fps of [10, 30, 60, 144, 240]) {
+      const p = new Player([15.5, 21, 10.5]);
+      p.yaw = -Math.PI / 2;
+      for (let i = 0; i < fps * 5; i++) p.update(sea(1), { ...idle, forward: 1, jump: true }, 1 / fps);
+      p.update(sea(1), idle, 1);
+      expect(p.x, `${fps} fps`).toBeGreaterThan(21);
+      expect(p.y, `${fps} fps`).toBeCloseTo(21, 5);
+    }
+  });
+
+  it("does not climb a shore two blocks above the water, nor faster up a wall under it", () => {
+    const p = new Player([15.5, 21, 10.5]);
+    p.yaw = -Math.PI / 2;
+    for (let i = 0; i < 300; i++) p.update(sea(2), { ...idle, forward: 1, jump: true }, 1 / 60);
+    expect(p.x).toBeLessThan(20);
+    const deep: BlockSource = { get: (x, y) => (y < 10 || x >= 20 ? STONE : y < 21 ? WATER : AIR) };
+    const diver = new Player([19.5, 10, 10.5]);
+    diver.yaw = -Math.PI / 2;
+    let fastest = 0;
+    for (let i = 0; i < 120; i++) {
+      const y = diver.y;
+      diver.update(deep, { ...idle, forward: 1, jump: true }, 1 / 60);
+      if (diver.y < 18) fastest = Math.max(fastest, (diver.y - y) * 60);
+    }
+    expect(fastest).toBeGreaterThan(2);
+    expect(fastest).toBeLessThanOrEqual(2.4 + 1e-6);
+  });
+
   it("rises out of a block placed on it", () => {
     const world = new World();
     const p = new Player([10.5, 30, 10.5]);
@@ -80,6 +113,28 @@ describe("pointing", () => {
     expect(x).toBeCloseTo(150, 3);
     expect(y).toBeCloseTo(100, 3);
     expect(project(vp, [0, 0, 5], 300, 200)).toBeNull();
+  });
+
+  it("sees a ghost ahead, at the edge and far off, and not one behind, beside or past the far plane", () => {
+    const vp = multiply(perspective(FOV, 1.5, 0.05, 160), view([0, 1.6, 0], 0, 0));
+    const at = (x: number, y: number, z: number) => ({ at: [x, y, z] as [number, number, number], yaw: 0.7, tint: [1, 1, 1] as [number, number, number] });
+    expect(ghostInView(vp, at(0, 0, -8))).toBe(true);
+    expect(ghostInView(vp, at(0, 0, -150))).toBe(true);
+    // Its middle just past the right edge: its side shows still.
+    const edge = Math.tan(FOV / 2) * 1.5 * 8;
+    expect(ghostInView(vp, at(edge + 0.5, 0.8, -8))).toBe(true);
+    expect(ghostInView(vp, at(0, 0, 8))).toBe(false);
+    expect(ghostInView(vp, at(edge + 2, 0.8, -8))).toBe(false);
+    expect(ghostInView(vp, at(0, 0, -170))).toBe(false);
+    // Under the feet of a camera looking up.
+    expect(ghostInView(multiply(perspective(FOV, 1.5, 0.05, 160), view([0, 1.6, 0], 0, 1.4)), at(0, -4, -1))).toBe(false);
+  });
+
+  it("the ghost's mesh fits in the ball ghostInView tests, at any yaw", () => {
+    const { vertices } = ghostMesh(0, 0);
+    for (let i = 0; i < vertices.length; i += FLOATS_PER_VERTEX) {
+      expect(Math.hypot(vertices[i], vertices[i + 1] - 0.8, vertices[i + 2])).toBeLessThanOrEqual(1);
+    }
   });
 });
 
