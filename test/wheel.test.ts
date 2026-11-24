@@ -73,6 +73,40 @@ describe("wheel stepper", () => {
     expect(wheel().burst({ deltaY: -1, deltaMode: 2 }, 3, 50)).toBe(-3);
   });
 
+  it("reads deltaMode before the delta, so Firefox gives its notch in lines, not in pixels under a slot", () => {
+    // Firefox's WheelEvent: a notch is 3 lines, but reading deltaX or deltaY before deltaMode switches the event to
+    // pixels (deltaMode 0) at the font's line height, about 48 px for 3 lines of 16 px: under a slot.
+    const firefoxNotch = (): WheelDelta => {
+      let modeRead = false;
+      let pixels = false;
+      const delta = (lines: number) => {
+        if (!modeRead) pixels = true;
+        return pixels ? lines * 16 : lines;
+      };
+      return {
+        get deltaMode() {
+          modeRead = true;
+          return pixels ? 0 : 1;
+        },
+        get deltaY() {
+          return delta(3);
+        },
+        get deltaX() {
+          return delta(0);
+        },
+      };
+    };
+    let now = 1000;
+    const step = createWheelStepper({ now: () => now });
+    // Four notches of a quick turn, 50 ms apart: a slot each, as on Chromium's 100 px notches.
+    let moved = 0;
+    for (let i = 0; i < 4; i++) {
+      now += i === 0 ? 1000 : 50;
+      moved += step(firefoxNotch());
+    }
+    expect(moved).toBe(4);
+  });
+
   it("starts the sum again when the wheel turns the other way", () => {
     const w = wheel();
     expect(w.send({ deltaY: 4 }, 1000)).toBe(1);

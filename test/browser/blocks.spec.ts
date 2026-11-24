@@ -106,9 +106,12 @@ test("the wheel picks a block a notch at a time: a trackpad swipe moves a slot o
   // A mouse notch: one slot.
   await ana.page.mouse.wheel(0, 100);
   await expect.poll(slot).toBe(1);
-  // A short trackpad swipe, 20 events of 4 px: a slot or two, not 20.
+  // A short trackpad swipe, 20 events of 4 px: a slot or two, not 20. Sent in one go in the page, so no two of them
+  // can land 200 ms apart on a slow runner (that would start a new turn and move a slot each).
   await ana.page.waitForTimeout(400);
-  for (let i = 0; i < 20; i++) await ana.page.mouse.wheel(0, 4);
+  await ana.frame.locator("canvas.view").evaluate((canvas) => {
+    for (let i = 0; i < 20; i++) canvas.dispatchEvent(new WheelEvent("wheel", { deltaY: 4, bubbles: true, cancelable: true }));
+  });
   await ana.page.waitForTimeout(100);
   const after = await slot();
   expect(after).toBeGreaterThanOrEqual(2);

@@ -40,10 +40,13 @@ export function createWheelStepper(options: WheelStepperOptions): (e: WheelDelta
   let sum = 0;
   let last = -Infinity;
   return (e) => {
+    // deltaMode first: Firefox switches an event to pixels (deltaMode 0) when a delta is read before it, and its
+    // 3-line notch then comes to about 48 px, under a slot, so the second notch of a quick turn would move nothing.
+    const mode = e.deltaMode;
     const delta = e.deltaY !== 0 ? e.deltaY : e.deltaX;
     if (!Number.isFinite(delta) || delta === 0) return 0;
     const page = options.pageHeight?.() ?? 0;
-    const px = delta * (e.deltaMode === 1 ? LINE_PX : e.deltaMode === 2 ? (page > 0 ? page : PAGE_PX) : 1);
+    const px = delta * (mode === 1 ? LINE_PX : mode === 2 ? (page > 0 ? page : PAGE_PX) : 1);
     const at = options.now();
     const paused = at - last >= PAUSE_MS;
     last = at;
