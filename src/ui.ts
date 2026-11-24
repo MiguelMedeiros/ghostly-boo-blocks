@@ -129,6 +129,7 @@ export class Ui {
     this.confirm.setAttribute("aria-describedby", question.id);
     confirmBox.append(question, row);
     this.confirm.append(confirmBox);
+    keepTab(this.confirm);
     host.append(this.confirm);
 
     this.help = el("div", "sheet");
@@ -150,6 +151,7 @@ export class Ui {
     if (!coarse) helpBox.append(el("p", "note", s.helpLayout));
     helpBox.append(el("p", "note", s.helpTogether), closeHelp);
     this.help.append(helpBox);
+    keepTab(this.help);
     host.append(this.help);
 
     this.toast = el("div", "toast");
@@ -291,4 +293,16 @@ export class Ui {
     this.closeConfirm();
     this.showHelp(false);
   }
+}
+
+/** Tab and Shift+Tab go round a modal dialog's buttons and never on to the world's controls behind it. */
+function keepTab(dialog: HTMLElement): void {
+  dialog.addEventListener("keydown", (e) => {
+    if (e.key !== "Tab") return;
+    const buttons = [...dialog.querySelectorAll("button")];
+    const at = buttons.indexOf(document.activeElement as HTMLButtonElement);
+    if (at === -1) return;
+    e.preventDefault();
+    buttons[(at + (e.shiftKey ? buttons.length - 1 : 1)) % buttons.length].focus();
+  });
 }

@@ -94,7 +94,7 @@ test("a block picked with the mouse leaves the keys to the world: Space still fl
   await ana.close();
 });
 
-test("its dialogs are named, and one the person opens takes the keyboard and gives it back to the world", async ({ browser }) => {
+test("its dialogs are named, and one the person opens takes the keyboard, keeps Tab in it and gives it back to the world", async ({ browser }) => {
   const chat = new Chat(browser);
   const ana = await chat.open("ana", { inChat: false });
   test.skip(!(await drawing(ana)), "no WebGL 2 in this browser here");
@@ -109,7 +109,13 @@ test("its dialogs are named, and one the person opens takes the keyboard and giv
 
   // Opened with the ? button: Close has the keyboard, and Escape gives it back to the world.
   await ana.frame.getByRole("button", { name: "How to play" }).click();
-  await expect(help.getByRole("button", { name: "Close" })).toBeFocused();
+  const close = help.getByRole("button", { name: "Close" });
+  await expect(close).toBeFocused();
+  // Tab stays in it: not on to the hotbar behind.
+  await ana.page.keyboard.press("Tab");
+  await expect(close).toBeFocused();
+  await ana.page.keyboard.press("Shift+Tab");
+  await expect(close).toBeFocused();
   await ana.page.keyboard.press("Escape");
   await expect(help).toBeHidden();
   await expect(view).toBeFocused();
@@ -121,7 +127,17 @@ test("its dialogs are named, and one the person opens takes the keyboard and giv
   await expect(confirm).toBeVisible();
   await expect(confirm).toHaveAttribute("aria-modal", "true");
   await expect(confirm).toHaveAccessibleDescription("Start a new world? Everything built here goes, for your contact too.");
-  await expect(confirm.getByRole("button", { name: "Cancel" })).toBeFocused();
+  const cancel = confirm.getByRole("button", { name: "Cancel" });
+  await expect(cancel).toBeFocused();
+  // Tab and Shift+Tab go round its two buttons.
+  await ana.page.keyboard.press("Tab");
+  await expect(confirm.getByRole("button", { name: "Start a new world" })).toBeFocused();
+  await ana.page.keyboard.press("Tab");
+  await expect(cancel).toBeFocused();
+  await ana.page.keyboard.press("Shift+Tab");
+  await expect(confirm.getByRole("button", { name: "Start a new world" })).toBeFocused();
+  await ana.page.keyboard.press("Shift+Tab");
+  await expect(cancel).toBeFocused();
   await ana.page.keyboard.press("Enter");
   await expect(confirm).toBeHidden();
   await expect(view).toBeFocused();
