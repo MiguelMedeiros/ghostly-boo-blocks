@@ -15,7 +15,7 @@ describe("protocol", () => {
   });
 
   it("reads a yaw of any number of whole turns as the same direction", () => {
-    const frame = parseFrame({ t: "tick", w, p: [1, 2, 3, -40 * 2 * Math.PI - 0.5, 0.25], e: encodePage([[70, stampOf(4, 1)]]) });
+    const frame = parseFrame({ t: "tick", w, p: [1, 2, 3, -200 * 2 * Math.PI - 0.5, 0.25], e: encodePage([[70, stampOf(4, 1)]]) });
     expect(frame).toMatchObject({ t: "tick", edits: [[70, stampOf(4, 1)]] });
     const pose = (frame as { pose: number[] }).pose;
     expect(pose.slice(0, 3)).toEqual([1, 2, 3]);
