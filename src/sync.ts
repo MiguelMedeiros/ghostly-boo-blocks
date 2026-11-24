@@ -59,6 +59,7 @@ export class Session {
   private sectionPump: Promise<void> | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
   private retry: ReturnType<typeof setTimeout> | null = null;
+  private retryMs = RETRY_MS;
   private readonly unsubscribe: (() => void)[] = [];
   /** Frames sent and received, for the tests and the status line. */
   readonly counts = { sent: 0, received: 0, dropped: 0 };
@@ -90,8 +91,9 @@ export class Session {
    * Starts: who this side is, whether the contact has Boo Blocks open already (context().peer), and the ticks. What
    * arrived before is handled now, in order.
    */
-  start(me: { version: string; name?: string; inChat: boolean }, peerOpen: { version: string } | null, tickMs = TICK_MS): void {
+  start(me: { version: string; name?: string; inChat: boolean }, peerOpen: { version: string } | null, tickMs = TICK_MS, retryMs = RETRY_MS): void {
     this.me = me;
+    this.retryMs = retryMs;
     const early = this.early ?? [];
     this.early = null;
     if (!me.inChat) {
@@ -172,7 +174,7 @@ export class Session {
     this.retry = setTimeout(() => {
       this.retry = null;
       if (this.state === "here" && this.timer) void this.sayHello(true);
-    }, RETRY_MS);
+    }, this.retryMs);
   }
 
   /** Says hello; `ask` asks the contact to answer with theirs, even if they already said it on this open. */
