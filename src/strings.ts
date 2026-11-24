@@ -22,6 +22,15 @@ export interface Strings {
   worldFull: string;
   storageFailed: string;
   worldReplaced: (name: string) => string;
+  /** What a screen reader calls the world (its role), and its name: the game and its keys. */
+  worldRole: string;
+  worldLabel: string;
+  /** Q or E did nothing, and why. */
+  nothingToBreak: string;
+  nothingToPlace: string;
+  cannotBreak: string;
+  noRoomYou: string;
+  noRoomContact: (name: string) => string;
   help: string;
   helpTitle: string;
   helpKeys: [string, string][];
@@ -65,6 +74,13 @@ export const en: Strings = {
   worldFull: "The world is full of changes: break or place blocks where you already built.",
   storageFailed: "Boo Blocks could not save the world. Your changes are kept while it is open.",
   worldReplaced: (name) => `${name} started a new world.`,
+  worldRole: "game",
+  worldLabel: "Boo Blocks world. W A S D to walk, arrows to turn, Space to jump, Q to break, E to place, 1 to 9 to choose a block, F to fly.",
+  nothingToBreak: "Nothing in reach to break",
+  nothingToPlace: "Nothing in reach to place a block on",
+  cannotBreak: "This block can't be broken",
+  noRoomYou: "No room there: you are in the way",
+  noRoomContact: (name) => `No room there: ${name} is in the way`,
   help: "How to play",
   helpTitle: "How to play",
   helpKeys: [
@@ -138,6 +154,13 @@ export const pt: Strings = {
   worldFull: "O mundo está cheio de mudanças: quebre ou coloque blocos onde já construiu.",
   storageFailed: "O Boo Blocks não conseguiu salvar o mundo. Suas mudanças ficam enquanto ele está aberto.",
   worldReplaced: (name) => `${name} começou um mundo novo.`,
+  worldRole: "jogo",
+  worldLabel: "Mundo do Boo Blocks. W A S D para andar, setas para virar, Espaço para pular, Q para quebrar, E para colocar, 1 a 9 para escolher um bloco, F para voar.",
+  nothingToBreak: "Nada ao alcance para quebrar",
+  nothingToPlace: "Nada ao alcance onde colocar um bloco",
+  cannotBreak: "Este bloco não pode ser quebrado",
+  noRoomYou: "Não cabe aí: você está no caminho",
+  noRoomContact: (name) => `Não cabe aí: ${name} está no caminho`,
   help: "Como jogar",
   helpTitle: "Como jogar",
   helpKeys: [

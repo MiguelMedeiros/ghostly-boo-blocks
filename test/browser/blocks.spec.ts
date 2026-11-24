@@ -14,6 +14,14 @@ async function edits(side: Side): Promise<number> {
 /** Spots on the world, as fractions of its size, low enough to point at the ground in front, above the hotbar. */
 const SPOTS: [number, number][] = [[0.5, 0.8], [0.5, 0.72], [0.42, 0.78], [0.58, 0.78], [0.5, 0.66], [0.35, 0.8], [0.65, 0.8], [0.5, 0.6], [0.3, 0.7], [0.7, 0.7]];
 
+/** Whether a spot of the world is the world itself, not a button over it (a phone's touch buttons cover some). */
+async function open(side: Side, position: { x: number; y: number }): Promise<boolean> {
+  return side.frame.locator("canvas.view").evaluate((canvas, { x, y }) => {
+    const rect = canvas.getBoundingClientRect();
+    return document.elementFromPoint(rect.left + x, rect.top + y) === canvas;
+  }, position);
+}
+
 /**
  * Breaks (left) or places (right) a block, or taps one on a phone: a person starts a few blocks from the middle at
  * random, so the spot that reaches a block differs; this tries spots until a cell changes.
@@ -25,6 +33,8 @@ async function build(side: Side, action: "left" | "right" | "tap"): Promise<void
   for (let round = 0; round < 5; round++) {
     for (const [fx, fy] of SPOTS) {
       const position = { x: Math.round(box.width * fx), y: Math.round(box.height * fy) };
+      // A click on a covered spot would wait for the button to move away until the test times out.
+      if (!(await open(side, position))) continue;
       if (action === "tap") await view.tap({ position });
       else await view.click({ position, button: action });
       try {
@@ -120,6 +130,56 @@ test("the wheel picks a block a notch at a time: a trackpad swipe moves a slot o
   await ana.page.waitForTimeout(400);
   await ana.page.mouse.wheel(60, 0);
   await expect.poll(slot).toBe(after + 1);
+  await ana.close();
+});
+
+test("its dialogs are named, and one the person opens takes the keyboard, keeps Tab in it and gives it back to the world", async ({ browser }) => {
+  const chat = new Chat(browser);
+  const ana = await chat.open("ana", { inChat: false });
+  test.skip(!(await drawing(ana)), "no WebGL 2 in this browser here");
+  const view = ana.frame.locator("canvas.view");
+  // The first open's help: named by its heading, and it leaves the focus where it was.
+  const help = ana.frame.getByRole("dialog", { name: "How to play" });
+  await expect(help).toBeVisible();
+  await expect(help).toHaveAttribute("aria-modal", "true");
+  expect(await ana.frame.evaluate(() => document.activeElement?.closest("[role=dialog]") ?? null)).toBeNull();
+  await dismissHelp(ana);
+  await expect(view).toBeFocused();
+
+  // Opened with the ? button: Close has the keyboard, and Escape gives it back to the world.
+  await ana.frame.getByRole("button", { name: "How to play" }).click();
+  const close = help.getByRole("button", { name: "Close" });
+  await expect(close).toBeFocused();
+  // Tab stays in it: not on to the hotbar behind.
+  await ana.page.keyboard.press("Tab");
+  await expect(close).toBeFocused();
+  await ana.page.keyboard.press("Shift+Tab");
+  await expect(close).toBeFocused();
+  await ana.page.keyboard.press("Escape");
+  await expect(help).toBeHidden();
+  await expect(view).toBeFocused();
+
+  // New world, from the menu: named, described by its question, Cancel has the keyboard, and Enter on it goes back.
+  await ana.frame.getByRole("button", { name: "Menu" }).click();
+  await ana.frame.getByRole("button", { name: "New world" }).click();
+  const confirm = ana.frame.getByRole("dialog", { name: "New world" });
+  await expect(confirm).toBeVisible();
+  await expect(confirm).toHaveAttribute("aria-modal", "true");
+  await expect(confirm).toHaveAccessibleDescription("Start a new world? Everything built here goes, for your contact too.");
+  const cancel = confirm.getByRole("button", { name: "Cancel" });
+  await expect(cancel).toBeFocused();
+  // Tab and Shift+Tab go round its two buttons.
+  await ana.page.keyboard.press("Tab");
+  await expect(confirm.getByRole("button", { name: "Start a new world" })).toBeFocused();
+  await ana.page.keyboard.press("Tab");
+  await expect(cancel).toBeFocused();
+  await ana.page.keyboard.press("Shift+Tab");
+  await expect(confirm.getByRole("button", { name: "Start a new world" })).toBeFocused();
+  await ana.page.keyboard.press("Shift+Tab");
+  await expect(cancel).toBeFocused();
+  await ana.page.keyboard.press("Enter");
+  await expect(confirm).toBeHidden();
+  await expect(view).toBeFocused();
   await ana.close();
 });
 
@@ -263,12 +323,13 @@ test("redraws for the contact's ghost only while it is in view", async ({ browse
   await ana.page.waitForTimeout(1500);
   expect(await drawsOver(ana, draws, 2000)).toBeGreaterThanOrEqual(4);
 
-  // Ana turns round: Bob's ghost is behind her, and an idle world is not drawn at all.
+  // Ana turns round: Bob's ghost is behind her, and an idle world is not drawn at all. The game counts a frame as
+  // 0.1 s at most, so a slow page (a few frames a second without a GPU) turns less than its time: she turns until his
+  // name goes, rather than for a fixed time.
   await ana.frame.locator("canvas.view").focus();
   await ana.page.keyboard.down("ArrowLeft");
-  await ana.page.waitForTimeout(1400);
+  await expect(ana.frame.locator(".name-tag")).toBeHidden({ timeout: 30_000 });
   await ana.page.keyboard.up("ArrowLeft");
-  await expect(ana.frame.locator(".name-tag")).toBeHidden();
   await ana.page.waitForTimeout(1500);
   expect(await drawsOver(ana, draws, 2000)).toBeLessThanOrEqual(1);
   await bob.close();

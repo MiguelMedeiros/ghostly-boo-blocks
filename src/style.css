@@ -45,6 +45,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .plain, .danger { border-radius: 10px; padding: 8px 14px; border: 1px solid var(--line); background: transparent; }
 .danger { background: var(--danger); color: #fff; border-color: transparent; }
 .toast { position: absolute; left: 50%; top: 52px; transform: translateX(-50%); background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 7px 14px; max-width: calc(100% - 32px); text-align: center; pointer-events: none; }
+/* Empty between notices: no box to see, but still in the page, so the next notice is read out. */
+.toast:empty { padding: 0; border: 0; background: none; }
 .hotbar { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); display: flex; gap: 4px; padding: 5px; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; max-width: calc(100% - 16px); overflow-x: auto; scrollbar-width: none; }
 .slot { position: relative; flex: none; width: 40px; height: 40px; padding: 3px; border-radius: 8px; border: 2px solid transparent; background: transparent; }
 .slot.selected { border-color: var(--accent); background: var(--line); }

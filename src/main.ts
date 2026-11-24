@@ -11,7 +11,7 @@ import { Core } from "./core.ts";
 import { Player, EYE } from "./player.ts";
 import { raycast, type Hit } from "./raycast.ts";
 import { FOV, ghostInView, Renderer, type Ghost } from "./render/renderer.ts";
-import { project, rayThrough, type Vec3 } from "./render/math.ts";
+import { project, rayThrough, wrapAngle, type Vec3 } from "./render/math.ts";
 import { Sound } from "./sound.ts";
 import { stringsFor } from "./strings.ts";
 import type { Contact } from "./sync.ts";
@@ -154,7 +154,7 @@ async function main(): Promise<void> {
   if (Array.isArray(saved) && saved.length === 6 && saved.every((n) => typeof n === "number" && Number.isFinite(n))) {
     const [x, y, z, yaw, pitch, flying] = saved as number[];
     if (x >= 0 && z >= 0 && x <= SIZE_X && z <= SIZE_Z && y >= 0 && y <= SIZE_Y + 20) {
-      Object.assign(player, { x, y, z, yaw, pitch: Math.max(-1.55, Math.min(1.55, pitch)), flying: flying === 1 });
+      Object.assign(player, { x, y, z, yaw: wrapAngle(yaw), pitch: Math.max(-1.55, Math.min(1.55, pitch)), flying: flying === 1 });
     }
   } else {
     // The first time in this chat: how to play. Where the person stands is kept from now on, so it shows once.
@@ -196,24 +196,33 @@ async function main(): Promise<void> {
     return raycast(world, [player!.x, player!.y + EYE, player!.z], dir);
   }
 
-  function act(place: boolean, at: [number, number] | null): void {
+  /** Breaks or places a block. Returns what to say when nothing happened and the person should hear why, else null. */
+  function act(place: boolean, at: [number, number] | null): string | null {
     sound.wake();
     const hit = target(at);
-    if (!hit) return;
+    if (!hit) return place ? strings.nothingToPlace : strings.nothingToBreak;
     if (place) {
       const [x, y, z] = hit.before;
       const block = PALETTE[selected];
-      if (!inWorld(x, y, z)) return;
-      if (BLOCKS[block]?.solid && player!.overlaps(x, y, z)) return;
-      if (ghost && BLOCKS[block]?.solid && Math.abs(ghost.at[0] - (x + 0.5)) < 0.7 && Math.abs(ghost.at[2] - (z + 0.5)) < 0.7 && y >= Math.floor(ghost.at[1]) && y < ghost.at[1] + 1.5) return;
+      if (!inWorld(x, y, z)) return strings.nothingToPlace;
+      if (BLOCKS[block]?.solid && player!.overlaps(x, y, z)) return strings.noRoomYou;
+      if (ghost && BLOCKS[block]?.solid && Math.abs(ghost.at[0] - (x + 0.5)) < 0.7 && Math.abs(ghost.at[2] - (z + 0.5)) < 0.7 && y >= Math.floor(ghost.at[1]) && y < ghost.at[1] + 1.5) return strings.noRoomContact(contactName(core.session.contact));
       if (core.place(x, y, z, block)) sound.place(BLOCKS[block]!.sound);
       else if (world.full) ui!.notice(strings.worldFull);
     } else {
       const [x, y, z] = hit.cell;
       const block = world.get(x, y, z);
-      if (BLOCKS[block]?.fixed) return;
+      if (BLOCKS[block]?.fixed) return strings.cannotBreak;
       if (core.place(x, y, z, AIR)) sound.breakBlock(BLOCKS[block]?.sound ?? "stone");
+      else if (world.full) ui!.notice(strings.worldFull);
     }
+    return null;
+  }
+
+  /** Q and E: the same as a click at the centre, and a word when nothing happened (the world shows no cursor to them). */
+  function actByKey(place: boolean): void {
+    const miss = act(place, null);
+    if (miss) ui!.hint(miss);
   }
 
   // Pointer: drag to look; a click (or a tap) that did not drag acts.
@@ -242,7 +251,7 @@ async function main(): Promise<void> {
     if (!p.moved && Math.hypot(e.clientX - p.startX, e.clientY - p.startY) > 6) p.moved = true;
     if (p.moved && [...pointers.keys()][0] === e.pointerId) {
       const k = p.type === "mouse" ? LOOK : LOOK * 1.4;
-      player!.yaw -= dx * k;
+      player!.yaw = wrapAngle(player!.yaw - dx * k);
       player!.pitch = Math.max(-1.55, Math.min(1.55, player!.pitch - dy * k));
     }
   });
@@ -283,8 +292,8 @@ async function main(): Promise<void> {
     else if (e.code === "Minus") choose(10);
     else if (e.code === "Equal") choose(11);
     else if (e.code === "KeyF") toggleFly();
-    else if (e.code === "KeyQ") act(false, null);
-    else if (e.code === "KeyE") act(true, null);
+    else if (e.code === "KeyQ") actByKey(false);
+    else if (e.code === "KeyE") actByKey(true);
   });
   window.addEventListener("keyup", (e) => keys.delete(e.code));
   window.addEventListener("blur", () => {
@@ -337,6 +346,7 @@ async function main(): Promise<void> {
     const down = (...codes: string[]) => codes.some((c) => keys.has(c));
     if (down("ArrowLeft")) p.yaw += TURN * dt;
     if (down("ArrowRight")) p.yaw -= TURN * dt;
+    p.yaw = wrapAngle(p.yaw);
     if (down("ArrowUp")) p.pitch = Math.min(1.55, p.pitch + TURN * 0.6 * dt);
     if (down("ArrowDown")) p.pitch = Math.max(-1.55, p.pitch - TURN * 0.6 * dt);
     const forward = (down("KeyW") || held.forward ? 1 : 0) - (down("KeyS") || held.back ? 1 : 0);
