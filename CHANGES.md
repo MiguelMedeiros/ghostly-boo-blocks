@@ -4,6 +4,9 @@ Each version Boo Blocks publishes, newest first. The manifest's `releaseNotes` i
 
 ## Unreleased
 
+- The menu (⋯) closed with the mouse gives the keys back to the world. Before, ⋯ kept the focus, so the next Space
+  opened the menu again instead of jumping, and the world took no keys until the person clicked it. Closed by
+  keyboard, ⋯ keeps the focus, as before.
 - The published page has its `<main>` landmark too: the build wrote the page with a plain `<div>`, so the landmark
   above reached only the dev page. Start a new world's red button and a phone's Fly or place-mode button switched on
   read at 4.5:1 or more; before, white on red was 4.49:1, and Walk was white on purple at 3.99:1 (2.48:1 in the dark
