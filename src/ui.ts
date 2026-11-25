@@ -169,14 +169,20 @@ export class Ui {
     this.toast.setAttribute("role", "status");
     host.append(this.toast);
 
+    // For the eye only: a screen reader hears the pick from the slot's aria-pressed.
     this.blockName = el("div", "block-name");
+    this.blockName.setAttribute("aria-hidden", "true");
     host.append(this.blockName);
     this.hotbar = el("div", "hotbar");
     PALETTE.forEach((block, i) => {
       const slot = el("button", "slot");
       slot.append(swatch(block));
       const key = i < 9 ? String(i + 1) : i === 9 ? "0" : "";
-      if (key) slot.append(el("span", "key", key));
+      // The digit drawn on the slot is its key: a screen reader says it as the slot's shortcut.
+      if (key) {
+        slot.append(el("span", "key", key));
+        slot.setAttribute("aria-keyshortcuts", key);
+      }
       const name = BLOCKS[block] ? s.blocks[BLOCKS[block]!.key] : "";
       slot.setAttribute("aria-label", name);
       slot.setAttribute("aria-pressed", "false");

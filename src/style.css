@@ -2,8 +2,10 @@
   --ink: #1d1b26;
   --paper: rgba(255, 255, 255, 0.86);
   --line: rgba(29, 27, 38, 0.14);
-  --accent: #7c6cf0;
-  --danger: #d2463c;
+  /* --danger and --accent keep white text over them at 4.5:1 (test/contrast.test.ts); --on-accent is that text. */
+  --accent: #6c5ce7;
+  --on-accent: #ffffff;
+  --danger: #c8423a;
   color-scheme: light;
 }
 :root[data-theme="dark"] {
@@ -11,6 +13,7 @@
   --paper: rgba(28, 26, 38, 0.86);
   --line: rgba(242, 240, 250, 0.16);
   --accent: #a597ff;
+  --on-accent: #1d1b26;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -66,6 +69,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .pad .down { position: absolute; left: 56px; bottom: 0; }
   .side { position: absolute; right: 12px; bottom: 0; display: grid; grid-template-columns: 52px 52px; gap: 8px; }
   .side .fly { font-size: 13px; }
-  .side .on { background: var(--accent); color: #fff; }
+  .side .on { background: var(--accent); color: var(--on-accent); }
   .crosshair { display: none; }
 }
