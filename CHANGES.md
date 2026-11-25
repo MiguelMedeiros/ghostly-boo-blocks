@@ -4,6 +4,11 @@ Each version Boo Blocks publishes, newest first. The manifest's `releaseNotes` i
 
 ## Unreleased
 
+- The published page has its `<main>` landmark too: the build wrote the page with a plain `<div>`, so the landmark
+  above reached only the dev page. Start a new world's red button and a phone's Fly or place-mode button switched on
+  read at 4.5:1 or more; before, white on red was 4.49:1, and Walk was white on purple at 3.99:1 (2.48:1 in the dark
+  theme). A screen reader hears each hotbar slot's key (1-9, 0) as its shortcut, and no longer finds the picked
+  block's name flashed over the hotbar as stray text outside the page's landmark.
 - Screen readers: the world is an application to them, so it no longer sits as a silent, role-less stop that takes
   the focus (`role="application"`, named with the game and its keys), so W A S D, Q, E, the arrows and Space reach the
   game instead of being taken for reading. The notices' status line is always in the page (empty and unseen between

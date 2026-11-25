@@ -42,7 +42,8 @@ function singleFile(): Plugin {
         `    <style>\n${css}</style>`,
         "  </head>",
         "  <body>",
-        '    <div id="app"></div>',
+        // A <main>, as in index.html: the page's one landmark, around the world and its controls.
+        '    <main id="app"></main>',
         `    <script>\n/*! Boo Blocks, a Ghostly mini-app. MIT License, Copyright (c) 2026 Miguel Medeiros. */\n(() => {\n${code}\n})();\n</script>`,
         "  </body>",
         "</html>",

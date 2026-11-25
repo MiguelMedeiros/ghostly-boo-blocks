@@ -83,6 +83,28 @@ describe("Notices", () => {
   });
 });
 
+describe("The hotbar", () => {
+  it("names each slot by its block and gives the key drawn on it as its shortcut", () => {
+    const { host } = page();
+    const slots = [...host.querySelectorAll<HTMLButtonElement>(".hotbar .slot")];
+    expect(slots.length).toBeGreaterThan(9);
+    slots.forEach((slot, i) => {
+      const key = i < 9 ? String(i + 1) : i === 9 ? "0" : null;
+      expect(slot.getAttribute("aria-label")).toBe(slot.title);
+      expect(slot.getAttribute("aria-keyshortcuts")).toBe(key);
+      expect(slot.querySelector(".key")?.textContent ?? null).toBe(key);
+    });
+  });
+
+  it("flashes the picked block's name for the eye only: the slot's aria-pressed already says it", () => {
+    const { ui, host } = page();
+    ui.select(1, en.blocks.dirt);
+    const name = host.querySelector<HTMLElement>(".block-name")!;
+    expect(name.textContent).toBe(en.blocks.dirt);
+    expect(name.getAttribute("aria-hidden")).toBe("true");
+  });
+});
+
 describe("axe", () => {
   it("finds no content outside a landmark, and nothing wrong with the world's role", async () => {
     const { ui } = page();
