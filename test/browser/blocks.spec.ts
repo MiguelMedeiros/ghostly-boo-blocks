@@ -104,6 +104,32 @@ test("a block picked with the mouse leaves the keys to the world: Space still fl
   await ana.close();
 });
 
+test("the menu closed with the mouse leaves the keys to the world: Space does not open it again", async ({ browser }) => {
+  const chat = new Chat(browser);
+  const ana = await chat.open("ana", { inChat: false });
+  await dismissHelp(ana);
+  const view = ana.frame.locator("canvas.view");
+  const menu = ana.frame.getByRole("button", { name: "Menu", exact: true });
+  const newWorld = ana.frame.getByRole("button", { name: "New world", exact: true });
+  await menu.click();
+  await expect(newWorld).toBeVisible();
+  await expect(menu).toHaveAttribute("aria-expanded", "true");
+  await menu.click();
+  await expect(newWorld).toBeHidden();
+  await expect(menu).toHaveAttribute("aria-expanded", "false");
+  await expect(view).toBeFocused();
+  await ana.page.keyboard.press("Space");
+  await expect(newWorld).toBeHidden();
+  // Closed by keyboard, ⋯ keeps the focus, so Tab goes on from there.
+  await menu.focus();
+  await ana.page.keyboard.press("Enter");
+  await expect(newWorld).toBeVisible();
+  await ana.page.keyboard.press("Enter");
+  await expect(newWorld).toBeHidden();
+  await expect(menu).toBeFocused();
+  await ana.close();
+});
+
 test("the wheel picks a block a notch at a time: a trackpad swipe moves a slot or two, sideways goes forward", async ({ browser }) => {
   const chat = new Chat(browser);
   const ana = await chat.open("ana", { inChat: false });
